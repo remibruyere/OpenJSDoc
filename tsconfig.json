@@ -3,7 +3,9 @@
     "module": "commonjs",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "target": "es6",
+    "allowJs": true,
+    "checkJs": true,
+    "target": "ES2022",
     "noImplicitAny": true,
     "moduleResolution": "node",
     "sourceMap": true,
@@ -14,9 +16,11 @@
         "node_modules/*",
         "src/types/*"
       ]
-    }
+    },
+    "strictNullChecks": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "fixtures/**/*"
   ]
 }
