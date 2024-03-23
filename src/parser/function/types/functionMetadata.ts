@@ -1,6 +1,6 @@
 import { type DecoratorMetadata } from '../../../types/decoratorMetadata';
 
-export interface ClassPropertyMetadata {
+export interface FunctionMetadata {
   name: string;
   comment: string;
   decorators: DecoratorMetadata[];

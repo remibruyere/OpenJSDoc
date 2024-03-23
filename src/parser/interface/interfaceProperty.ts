@@ -1,17 +1,17 @@
 import type ts from 'typescript';
 import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
 import { getPropertyGlobalComment, getTagInformation } from '../../lib/tag';
-import { type ClassPropertyMetadata } from './types/classPropertyMetadata';
+import { type InterfacePropertyMetadata } from './types/interfacePropertyMetadata';
 import { type DecoratorMetadata } from '../../types/decoratorMetadata';
 
-export function parseClassProperty(
-  propertyDeclaration: ts.PropertyDeclaration
-): ClassPropertyMetadata {
+export function parseInterfaceProperty(
+  propertySignature: ts.PropertySignature
+): InterfacePropertyMetadata {
   let comment: string = '';
   const decorators: DecoratorMetadata[] = [];
 
-  if (canHaveJsDoc(propertyDeclaration)) {
-    const jsDocs: ts.JSDoc[] = getJsDoc(propertyDeclaration);
+  if (canHaveJsDoc(propertySignature)) {
+    const jsDocs: ts.JSDoc[] = getJsDoc(propertySignature);
     for (const jsDoc of jsDocs) {
       comment = getPropertyGlobalComment(jsDoc);
       if (jsDoc.tags != null) {
@@ -23,7 +23,7 @@ export function parseClassProperty(
   }
 
   return {
-    name: propertyDeclaration.name.getText(),
+    name: propertySignature.name.getText(),
     comment,
     decorators,
   };

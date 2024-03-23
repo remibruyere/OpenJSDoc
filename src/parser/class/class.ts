@@ -1,18 +1,17 @@
-import * as ts from 'typescript';
-import { type ClassPropertyMetadata, type ClassMetadata } from 'class';
+import ts from 'typescript';
 import { parseClassProperty } from './classProperty';
 import { type ClassElement, getTextOfJSDocComment } from 'typescript';
 import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
+import { type ClassPropertyMetadata } from './types/classPropertyMetadata';
+import { type ClassMetadata } from './types/classMetadata';
 
 export function parseClass(
   classDeclaration: ts.ClassDeclaration
 ): ClassMetadata {
-  const className = classDeclaration.name?.getText() ?? '';
-  const properties = parseClassMembers(classDeclaration.members);
   return {
-    name: className,
+    name: classDeclaration.name?.getText() ?? '',
     comment: getClassComment(classDeclaration),
-    properties,
+    properties: parseClassMembers(classDeclaration.members),
   };
 }
 

@@ -1,31 +1,37 @@
-import * as ts from 'typescript';
-import * as fs from 'fs';
-import { type ClassMetadata } from './parser/class/types/classMetadata';
+import ts from 'typescript';
+import fs from 'fs';
+import { type GlobalMetadata } from './types/globalMetadata';
 import { parseClass } from './parser/class/class';
+import { parseFunction } from './parser/function/function';
+import { parseInterface } from './parser/interface/interface';
 
-export function extractClassMetadata(code: string): ClassMetadata[] {
+export function extractGlobalMetadata(code: string): GlobalMetadata {
   const ast = ts.createSourceFile(
-    'fixtures/classMetadata.ts',
+    'fixtures/function.ts',
     code,
     ts.ScriptTarget.Latest,
     true
   );
-  const classMetadata: ClassMetadata[] = [];
+  const globalMetadata: GlobalMetadata = [];
 
-  function visit(node: ts.Node): void {
+  const visit = (node: ts.Node): void => {
     if (ts.isClassDeclaration(node)) {
-      classMetadata.push(parseClass(node));
+      globalMetadata.push(parseClass(node));
+    } else if (ts.isFunctionDeclaration(node)) {
+      globalMetadata.push(parseFunction(node));
+    } else if (ts.isInterfaceDeclaration(node)) {
+      globalMetadata.push(parseInterface(node));
     }
     ts.forEachChild(node, visit);
-  }
+  };
 
   visit(ast);
-  return classMetadata;
+  return globalMetadata;
 }
 
 function test(): void {
-  const code = fs.readFileSync('fixtures/classMetadata.ts');
-  const classMetadata = extractClassMetadata(code.toString());
+  const code = fs.readFileSync('fixtures/function.ts');
+  const classMetadata = extractGlobalMetadata(code.toString());
   console.log(JSON.stringify(classMetadata, null, 2));
 }
 

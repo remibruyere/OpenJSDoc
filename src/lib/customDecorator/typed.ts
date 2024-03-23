@@ -1,5 +1,5 @@
-import type * as ts from 'typescript';
 import { getTextOfJSDocComment } from 'typescript';
+import type ts from 'typescript';
 
 export function parseCustomTagTypedType(
   tag: ts.JSDocTag
