@@ -4,6 +4,8 @@ import { type GlobalMetadata } from './types/globalMetadata';
 import { parseClass } from './parser/class/class';
 import { parseFunction } from './parser/function/function';
 import { parseInterface } from './parser/interface/interface';
+import { OpenApiDocBuilder } from './openApiDoc/builder';
+import { type PathConfiguration } from './types/pathConfiguration';
 
 export function extractGlobalMetadata(code: string): GlobalMetadata {
   const ast = ts.createSourceFile(
@@ -12,15 +14,19 @@ export function extractGlobalMetadata(code: string): GlobalMetadata {
     ts.ScriptTarget.Latest,
     true
   );
-  const globalMetadata: GlobalMetadata = [];
+  const globalMetadata: GlobalMetadata = {
+    functionMetadata: [],
+    classMetadata: [],
+    interfaceMetadata: [],
+  };
 
   const visit = (node: ts.Node): void => {
     if (ts.isClassDeclaration(node)) {
-      globalMetadata.push(parseClass(node));
+      globalMetadata.classMetadata.push(parseClass(node));
     } else if (ts.isFunctionDeclaration(node)) {
-      globalMetadata.push(parseFunction(node));
+      globalMetadata.functionMetadata.push(parseFunction(node));
     } else if (ts.isInterfaceDeclaration(node)) {
-      globalMetadata.push(parseInterface(node));
+      globalMetadata.interfaceMetadata.push(parseInterface(node));
     }
     ts.forEachChild(node, visit);
   };
@@ -31,8 +37,23 @@ export function extractGlobalMetadata(code: string): GlobalMetadata {
 
 function test(): void {
   const code = fs.readFileSync('fixtures/function.ts');
-  const classMetadata = extractGlobalMetadata(code.toString());
-  console.log(JSON.stringify(classMetadata, null, 2));
+  const handlerFunctionName = 'handler';
+  const pathConfiguration: PathConfiguration = {
+    path: '/test',
+    method: 'get',
+    summary: 'A test example',
+    description: 'Test to see if all is working',
+  };
+  const globalMetadata = extractGlobalMetadata(code.toString());
+  console.log(JSON.stringify(globalMetadata, null, 2));
+  const openApiDocBuilder = new OpenApiDocBuilder();
+  openApiDocBuilder.addEndpointConfiguration(
+    handlerFunctionName,
+    pathConfiguration,
+    globalMetadata
+  );
+  fs.writeFileSync('output/openapi.json', openApiDocBuilder.getAsJson(), {});
+  fs.writeFileSync('output/openapi.yaml', openApiDocBuilder.getAsXml(), {});
 }
 
 test();

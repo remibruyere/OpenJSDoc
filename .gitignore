@@ -15,6 +15,7 @@ tmp
 
 # Build
 public/css/main.css
+output/openapi*
 
 # Coverage reports
 coverage

@@ -30,14 +30,15 @@ function getFunctionComment(
 
 function getFunctionDecorator(
   functionDeclaration: ts.FunctionDeclaration
-): DecoratorMetadata[] {
-  const decorators: DecoratorMetadata[] = [];
+): Record<string, DecoratorMetadata> {
+  const decorators: Record<string, DecoratorMetadata> = {};
 
   const jsDocs: ts.JSDoc[] = getJsDoc(functionDeclaration);
   for (const jsDoc of jsDocs) {
     if (jsDoc.tags != null) {
       for (const tag of jsDoc.tags) {
-        decorators.push(getTagInformation(tag));
+        const tagInformation = getTagInformation(tag);
+        decorators[tagInformation.name] = tagInformation;
       }
     }
   }

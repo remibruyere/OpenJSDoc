@@ -1,11 +1,10 @@
 /**
  * Handler for test endpoint
  *
- * @request {TestReqDTO} Request body
- * @response {TestResDTO} Response body
+ * @content application/json
  *
- * @type {TestReqDTO} Request - Json request stringified
- * @type {TestResDTO} Response - Json response stringified
+ * @request {TestReqDTO} Request body test dto
+ * @response 200 {TestResDTO} Response body test dto
  */
 export function handler(
   req: TestReqDTO,
@@ -17,6 +16,10 @@ export function handler(
   };
 }
 
+interface ITestReqSubType {
+  test: number;
+}
+
 /**
  * DTO for request
  */
@@ -24,7 +27,7 @@ class TestReqDTO {
   /**
    * Uuid representing identifier of the class
    *
-   * @type {uuid}
+   * @format uuid
    * @required
    */
   id: string;
@@ -32,10 +35,15 @@ class TestReqDTO {
   /**
    * Date of creation
    *
-   * @type {Date}
+   * @format date
    * @optional
    */
-  createdAt?: Date;
+  createdAt?: string;
+
+  /**
+   * Subtype of the request
+   */
+  subType: ITestReqSubType;
 }
 
 /**

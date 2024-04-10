@@ -1,6 +1,7 @@
 import ts from 'typescript';
 import {
   parseCustomTagTypedComment,
+  parseCustomTagTypedResponseCode,
   parseCustomTagTypedType,
 } from './customDecorator/typed';
 import { type DecoratorMetadata } from '../types/decoratorMetadata';
@@ -12,6 +13,7 @@ export function getTagInformation(tag: ts.JSDocTag): DecoratorMetadata {
     name: getPropertyName(tag),
     comment: getPropertyTagComment(tag),
     type: getDecoratorType(tag),
+    responseCode: getDecoratorResponseCode(tag),
   };
 }
 
@@ -48,6 +50,15 @@ export function getDecoratorType(
     } else if (ts.isTypeReferenceNode(typeNode)) {
       return typeNode.getText();
     }
+  }
+  return undefined;
+}
+
+export function getDecoratorResponseCode(
+  tag: ts.JSDocTag | ts.JSDocTypeTag
+): number | undefined {
+  if (['response'].includes(tag.tagName.getText())) {
+    return parseCustomTagTypedResponseCode(tag);
   }
   return undefined;
 }

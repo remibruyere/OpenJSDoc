@@ -8,7 +8,7 @@ export function parseInterfaceProperty(
   propertySignature: ts.PropertySignature
 ): InterfacePropertyMetadata {
   let comment: string = '';
-  const decorators: DecoratorMetadata[] = [];
+  const decorators: Record<string, DecoratorMetadata> = {};
 
   if (canHaveJsDoc(propertySignature)) {
     const jsDocs: ts.JSDoc[] = getJsDoc(propertySignature);
@@ -16,7 +16,8 @@ export function parseInterfaceProperty(
       comment = getPropertyGlobalComment(jsDoc);
       if (jsDoc.tags != null) {
         for (const tag of jsDoc.tags) {
-          decorators.push(getTagInformation(tag));
+          const tagInformation = getTagInformation(tag);
+          decorators[tagInformation.name] = tagInformation;
         }
       }
     }
