@@ -19,6 +19,7 @@
     "strictNullChecks": true
   },
   "include": [
+    "jest.config.js",
     "src/**/*",
     "fixtures/**/*"
   ]

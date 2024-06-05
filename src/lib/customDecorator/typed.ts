@@ -14,7 +14,7 @@ export function parseCustomTagTypedResponseCode(
 
   const matches = comment.match(customTagRegex);
 
-  return matches !== null ? Number(matches[1]) : undefined;
+  return matches?.[1] !== undefined ? Number(matches[1]) : undefined;
 }
 
 export function parseCustomTagTypedType(
@@ -28,11 +28,21 @@ export function parseCustomTagTypedType(
 
   const matches = comment.match(customTagRegex);
 
-  return matches !== null ? matches[2] : undefined;
+  if (matches === null) {
+    return undefined;
+  }
+
+  return matches[2].includes('|')
+    ? matches[2].split('|').map((value) => value.trim())
+    : matches[2];
 }
 
 export function parseCustomTagTypedComment(comment: string): string {
   const matches = comment.match(customTagRegex);
 
-  return matches !== null ? matches[3] : comment;
+  if (matches === null) {
+    return '';
+  }
+
+  return matches[3];
 }
