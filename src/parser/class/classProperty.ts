@@ -14,7 +14,7 @@ export function parseClassProperty(
   if (propertyDeclaration.type !== undefined) {
     decorators.type = {
       name: 'type',
-      type: convertKindToType(propertyDeclaration.type?.kind),
+      type: convertKindToType(propertyDeclaration.type.kind),
       comment: '',
     };
   }

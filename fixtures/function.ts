@@ -5,6 +5,7 @@
  *
  * @request {TestReqDTO} Request body test dto
  * @response 200 {TestResDTO} Response body test dto
+ * @response 400 {ITestReqSubType} Response body error dto
  */
 export function handler(
   req: TestReqDTO,
@@ -17,7 +18,8 @@ export function handler(
 }
 
 interface ITestReqSubType {
-  test: number;
+  errorCode: number;
+  errorMessage: string;
 }
 
 /**
