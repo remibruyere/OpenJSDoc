@@ -12,7 +12,7 @@ import { type ClassPropertyMetadata } from '../parser/class/types/classPropertyM
 import { type InterfacePropertyMetadata } from '../parser/interface/types/interfacePropertyMetadata';
 import { type SchemaObjectType } from 'openapi3-ts/src/model/openapi31';
 import { type PathConfiguration } from '../types/pathConfiguration';
-import type { DecoratorMetadata } from '../types/decoratorMetadata';
+import { type DecoratorMetadataList } from '../types/decoratorMetadataList';
 
 export class OpenApiDocBuilder {
   openApiBuilder: OpenApiBuilder;
@@ -75,58 +75,82 @@ export class OpenApiDocBuilder {
         description: entryPointMetadata?.comment,
         requestBody: this.getContentRequest(entryPointMetadata?.decorators),
         responses: {
-          ...this.getResponse(entryPointMetadata?.decorators),
+          ...this.getResponses(entryPointMetadata?.decorators),
         },
       },
     });
   }
 
   getContentRequest(
-    decorators: Record<string, DecoratorMetadata> | undefined
+    decorators: DecoratorMetadataList | undefined
   ): RequestBodyObject | undefined {
-    if (
-      decorators?.content === undefined ||
-      decorators?.request === undefined
-    ) {
+    const contentDecorator = decorators?.find(
+      (decorator) => decorator.name === 'content'
+    );
+    if (contentDecorator === undefined) {
       return undefined;
     }
+
+    const requestDecorator = decorators?.find(
+      (decorator) => decorator.name === 'request'
+    );
+    if (requestDecorator === undefined) {
+      return undefined;
+    }
+
     return {
-      description: decorators?.request?.comment,
+      description: requestDecorator?.comment,
       content: {
-        [decorators.content.comment]: {
+        [contentDecorator.comment]: {
           schema: {
-            $ref: `#/components/schemas/${decorators.request.type?.toString()}`,
+            $ref: `#/components/schemas/${requestDecorator.type?.toString()}`,
           },
         },
       },
     };
   }
 
-  getResponse(
-    decorators: Record<string, DecoratorMetadata> | undefined
+  getResponses(
+    decorators: DecoratorMetadataList | undefined
   ): ResponsesObject | undefined {
-    if (
-      decorators?.content === undefined ||
-      decorators?.response === undefined
-    ) {
-      return {};
+    const contentDecorator = decorators?.find(
+      (decorator) => decorator.name === 'content'
+    );
+    if (contentDecorator === undefined) {
+      return undefined;
     }
 
-    const responseCode: number | 'default' =
-      decorators?.response?.responseCode ?? 'default';
+    const responseDecorators = decorators?.filter(
+      (decorator) => decorator.name === 'response'
+    );
+    if (responseDecorators === undefined) {
+      return undefined;
+    }
 
-    return {
-      [responseCode]: {
-        description: decorators?.response?.comment,
-        content: {
-          [decorators.content.comment]: {
-            schema: {
-              $ref: `#/components/schemas/${decorators.response.type?.toString()}`,
+    const responses: ResponsesObject[] = responseDecorators.map(
+      (responseDecorator) => {
+        const responseCode: number | 'default' =
+          responseDecorator.responseCode ?? 'default';
+
+        return {
+          [responseCode]: {
+            description: responseDecorator?.comment,
+            content: {
+              [contentDecorator.comment]: {
+                schema: {
+                  $ref: `#/components/schemas/${responseDecorator.type?.toString()}`,
+                },
+              },
             },
           },
-        },
-      },
-    };
+        } satisfies ResponsesObject;
+      }
+    );
+
+    return responses.reduce(
+      (previousValue, currentValue) => ({ ...previousValue, ...currentValue }),
+      {}
+    );
   }
 
   addComponent(metadata: ClassMetadata | InterfaceMetadata): void {
@@ -145,16 +169,19 @@ export class OpenApiDocBuilder {
   getProperty(
     property: ClassPropertyMetadata | InterfacePropertyMetadata
   ): SchemaObject | undefined {
-    const type = property.decorators.type;
-    const format = property.decorators.format;
-
-    if (type?.type === undefined) {
+    const typeDecorator = property.decorators?.find(
+      (decorator) => decorator.name === 'type'
+    );
+    if (typeDecorator?.type === undefined) {
       return undefined;
     }
+    const formatDecorator = property.decorators?.find(
+      (decorator) => decorator.name === 'format'
+    );
 
     return {
-      type: this.convertToType(type.type.toString()),
-      format: format?.comment?.toString(),
+      type: this.convertToType(typeDecorator.type.toString()),
+      format: formatDecorator?.comment?.toString(),
     };
   }
 

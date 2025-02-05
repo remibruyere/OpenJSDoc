@@ -1,0 +1,107 @@
+openapi: 3.1.0
+info:
+  title: app
+  version: version
+paths:
+  /test0.44383204348405547:
+    summary: A test example
+    description: Test to see if all is working
+    get:
+      description: Handler for test endpoint 2
+      requestBody:
+        description: Request body test dto
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestReqDTO"
+      responses:
+        "200":
+          description: Response body test dto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestResDTO"
+        "400":
+          description: Response body error dto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ITestResError"
+  /test0.7845988802587662:
+    summary: A test example
+    description: Test to see if all is working
+    get:
+      description: Handler for test endpoint
+      requestBody:
+        description: Request body test dto
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestReqDTO"
+      responses:
+        "200":
+          description: Response body test dto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestResDTO"
+        "400":
+          description: Response body error dto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ITestReqSubType"
+components:
+  schemas:
+    ITestResError:
+      title: ITestResError
+      summary: ""
+      properties:
+        errorCode:
+          type: number
+        errorMessage:
+          type: string
+    IUser:
+      title: IUser
+      summary: ""
+      properties:
+        name:
+          type: string
+    TestReqDTO:
+      title: TestReqDTO
+      summary: DTO for request
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date
+        subType:
+          type: object
+    TestResDTO:
+      title: TestResDTO
+      summary: DTO for response
+      properties:
+        statusCode:
+          type: number
+        body:
+          type: string
+    ITestReqSubType:
+      title: ITestReqSubType
+      summary: ""
+      properties:
+        errorCode:
+          type: number
+        errorMessage:
+          type: string
+  responses: {}
+  parameters: {}
+  examples: {}
+  requestBodies: {}
+  headers: {}
+  securitySchemes: {}
+  links: {}
+  callbacks: {}
+tags: []
+servers: []

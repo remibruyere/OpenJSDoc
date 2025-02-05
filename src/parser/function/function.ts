@@ -1,9 +1,9 @@
-import { getTextOfJSDocComment } from 'typescript';
 import type ts from 'typescript';
+import { getTextOfJSDocComment } from 'typescript';
 import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
 import { type FunctionMetadata } from './types/functionMetadata';
 import { getTagInformation } from '../../lib/tag';
-import { type DecoratorMetadata } from '../../types/decoratorMetadata';
+import { type DecoratorMetadataList } from '../../types/decoratorMetadataList';
 
 export function parseFunction(
   functionDeclaration: ts.FunctionDeclaration
@@ -30,15 +30,15 @@ function getFunctionComment(
 
 function getFunctionDecorator(
   functionDeclaration: ts.FunctionDeclaration
-): Record<string, DecoratorMetadata> {
-  const decorators: Record<string, DecoratorMetadata> = {};
+): DecoratorMetadataList {
+  const decorators: DecoratorMetadataList = [];
 
   const jsDocs: ts.JSDoc[] = getJsDoc(functionDeclaration);
   for (const jsDoc of jsDocs) {
     if (jsDoc.tags != null) {
       for (const tag of jsDoc.tags) {
         const tagInformation = getTagInformation(tag);
-        decorators[tagInformation.name] = tagInformation;
+        decorators.push(tagInformation);
       }
     }
   }

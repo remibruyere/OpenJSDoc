@@ -1,7 +1,7 @@
-import { type DecoratorMetadata } from '../../../types/decoratorMetadata';
+import { type DecoratorMetadataList } from '../../../types/decoratorMetadataList';
 
 export interface ClassPropertyMetadata {
   name: string;
   comment: string;
-  decorators: Record<string, DecoratorMetadata | undefined>;
+  decorators: DecoratorMetadataList;
 }

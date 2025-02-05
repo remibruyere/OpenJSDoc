@@ -1,11 +1,13 @@
+import type { TestReqDTO } from './testReqDTO';
+
 /**
- * Handler for test endpoint 2
+ * Handler for test endpoint
  *
  * @content application/json
  *
  * @request {TestReqDTO} Request body test dto
  * @response 200 {TestResDTO} Response body test dto
- * @response 400 {ITestResError} Response body error dto
+ * @response 400 {ITestReqSubType} Response body error dto
  */
 export function handler(
   req: TestReqDTO,
@@ -17,39 +19,9 @@ export function handler(
   };
 }
 
-export interface ITestResError {
+export interface ITestReqSubType {
   errorCode: number;
   errorMessage: string;
-}
-
-export interface IUser {
-  name: string;
-}
-
-/**
- * DTO for request
- */
-export interface TestReqDTO {
-  /**
-   * Uuid representing identifier of the class
-   *
-   * @format uuid
-   * @required
-   */
-  id: string;
-
-  /**
-   * Date of creation
-   *
-   * @format date
-   * @optional
-   */
-  createdAt?: string;
-
-  /**
-   * Subtype of the request
-   */
-  user: IUser;
 }
 
 /**
@@ -57,8 +29,7 @@ export interface TestReqDTO {
  */
 interface TestResDTO {
   /**
-   * @required
-   * @example 200
+   * @response {TestResDTO} Response body
    */
   statusCode: number;
 
