@@ -8,6 +8,11 @@ import { type DecoratorMetadata } from '../types/decoratorMetadata';
 
 const customTags = ['response', 'request'];
 
+/**
+ * Extracts information from a JSDoc tag.
+ *
+ * @param tag
+ */
 export function getTagInformation(tag: ts.JSDocTag): DecoratorMetadata {
   return {
     name: getPropertyName(tag),
@@ -17,14 +22,29 @@ export function getTagInformation(tag: ts.JSDocTag): DecoratorMetadata {
   };
 }
 
+/**
+ * Gets the name of a JSDoc tag.
+ *
+ * @param tag
+ */
 export function getPropertyName(tag: ts.JSDocTag): string {
   return tag.tagName.getText();
 }
 
+/**
+ * Gets the global comment of a JSDoc.
+ *
+ * @param jsDoc
+ */
 export function getPropertyGlobalComment(jsDoc: ts.JSDoc): string {
   return ts.getTextOfJSDocComment(jsDoc.comment) ?? '';
 }
 
+/**
+ * Gets the comment of a JSDoc tag.
+ *
+ * @param tag
+ */
 export function getPropertyTagComment(tag: ts.JSDocTag): string {
   const comment = ts.getTextOfJSDocComment(tag.comment);
   if (comment !== undefined && customTags.includes(tag.tagName.getText())) {
@@ -33,6 +53,11 @@ export function getPropertyTagComment(tag: ts.JSDocTag): string {
   return comment ?? '';
 }
 
+/**
+ * Gets the decorator type of JSDoc tag.
+ *
+ * @param tag
+ */
 export function getDecoratorType(
   tag: ts.JSDocTag | ts.JSDocTypeTag
 ): string | string[] | undefined {
@@ -54,6 +79,11 @@ export function getDecoratorType(
   return undefined;
 }
 
+/**
+ * Gets the decorator response code of JSDoc tag.
+ *
+ * @param tag
+ */
 export function getDecoratorResponseCode(
   tag: ts.JSDocTag | ts.JSDocTypeTag
 ): number | undefined {

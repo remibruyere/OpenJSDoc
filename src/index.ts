@@ -1,59 +1,38 @@
-import ts from 'typescript';
-import fs from 'fs';
-import { type GlobalMetadata } from './types/globalMetadata';
-import { parseClass } from './parser/class/class';
-import { parseFunction } from './parser/function/function';
-import { parseInterface } from './parser/interface/interface';
 import { OpenApiDocBuilder } from './openApiDoc/builder';
-import { type PathConfiguration } from './types/pathConfiguration';
+import { OpenJsDoc } from './open-js-doc';
+import { OpenApiDocWriter } from './openApiDoc/writer';
 
-export function extractGlobalMetadata(code: string): GlobalMetadata {
-  const ast = ts.createSourceFile(
-    'fixtures/function.ts',
-    code,
-    ts.ScriptTarget.Latest,
-    true
-  );
-  const globalMetadata: GlobalMetadata = {
-    functionMetadata: [],
-    classMetadata: [],
-    interfaceMetadata: [],
-  };
+function main(): void {
+  // const openJsDoc = new OpenJsDoc('./fixtures/type/tsconfig.json');
+  const openJsDoc = new OpenJsDoc('./fixtures/interface/tsconfig.json');
+  // const openJsDoc = new OpenJsDoc('./tests/tsconfig.json');
 
-  const visit = (node: ts.Node): void => {
-    if (ts.isClassDeclaration(node)) {
-      globalMetadata.classMetadata.push(parseClass(node));
-    } else if (ts.isFunctionDeclaration(node)) {
-      globalMetadata.functionMetadata.push(parseFunction(node));
-    } else if (ts.isInterfaceDeclaration(node)) {
-      globalMetadata.interfaceMetadata.push(parseInterface(node));
-    }
-    ts.forEachChild(node, visit);
-  };
+  openJsDoc.computeProject();
 
-  visit(ast);
-  return globalMetadata;
-}
+  console.log(JSON.stringify(openJsDoc.getSourceFilesMetadata(), null, 2));
 
-function test(): void {
-  const code = fs.readFileSync('fixtures/function.ts');
-  const handlerFunctionName = 'handler';
-  const pathConfiguration: PathConfiguration = {
-    path: '/test',
-    method: 'get',
-    summary: 'A test example',
-    description: 'Test to see if all is working',
-  };
-  const globalMetadata = extractGlobalMetadata(code.toString());
-  console.log(JSON.stringify(globalMetadata, null, 2));
-  const openApiDocBuilder = new OpenApiDocBuilder();
+  const openApiDocBuilder = new OpenApiDocBuilder({
+    openapi: '3.1.0',
+    info: {
+      title: 'Test project',
+      version: '1.0.0',
+    },
+  });
   openApiDocBuilder.addEndpointConfiguration(
-    handlerFunctionName,
-    pathConfiguration,
-    globalMetadata
+    'accountFetchHandler',
+    {
+      path: '/test',
+      method: 'get',
+      summary: 'A test example',
+      description: 'Test to see if all is working',
+    },
+    openJsDoc.getSourceFilesMetadata()
   );
-  fs.writeFileSync('output/openapi.json', openApiDocBuilder.getAsJson(), {});
-  fs.writeFileSync('output/openapi.yaml', openApiDocBuilder.getAsXml(), {});
+
+  const openApiDocWriter = new OpenApiDocWriter(openApiDocBuilder);
+
+  openApiDocWriter.writeJson('output/openapi.json');
+  openApiDocWriter.writeYaml('output/openapi.yaml');
 }
 
-test();
+main();

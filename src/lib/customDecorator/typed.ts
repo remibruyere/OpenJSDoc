@@ -3,6 +3,11 @@ import type ts from 'typescript';
 
 const customTagRegex = /^\s*(\d\d\d)?\s*{([\s\S]*?)}\s*([\s\S]*)$/;
 
+/**
+ * Retrieve response code from a custom JSDoc tag.
+ *
+ * @param tag
+ */
 export function parseCustomTagTypedResponseCode(
   tag: ts.JSDocTag
 ): number | undefined {
@@ -17,6 +22,11 @@ export function parseCustomTagTypedResponseCode(
   return matches !== null ? Number(matches[1]) : undefined;
 }
 
+/**
+ * Retrieve response type from a custom JSDoc tag.
+ *
+ * @param tag
+ */
 export function parseCustomTagTypedType(
   tag: ts.JSDocTag
 ): string | string[] | undefined {
@@ -31,6 +41,11 @@ export function parseCustomTagTypedType(
   return matches !== null ? matches[2] : undefined;
 }
 
+/**
+ * Retrieve response comment from a custom JSDoc tag.
+ *
+ * @param comment
+ */
 export function parseCustomTagTypedComment(comment: string): string {
   const matches = comment.match(customTagRegex);
 

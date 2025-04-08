@@ -47,7 +47,7 @@ export class OpenApiDocBuilder {
     return this.openApiBuilder.getSpecAsJson(undefined, 2);
   }
 
-  getAsXml(): string {
+  getAsYaml(): string {
     return this.openApiBuilder.getSpecAsYaml();
   }
 

@@ -36,5 +36,11 @@ export function parseClassProperty(
     name: propertyDeclaration.name.getText(),
     comment,
     decorators,
+    // TODO change
+    type: {
+      type: '',
+      name: '',
+      subType: {},
+    },
   };
 }

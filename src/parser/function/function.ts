@@ -7,8 +7,12 @@ import { type DecoratorMetadata } from '../../types/decoratorMetadata';
 
 export function parseFunction(
   functionDeclaration: ts.FunctionDeclaration
-): FunctionMetadata {
-  const functionName = functionDeclaration.name?.getText() ?? '';
+): FunctionMetadata | undefined {
+  const functionName = functionDeclaration.name?.getText();
+  if (functionName === undefined || functionName.length === 0) {
+    return undefined;
+  }
+
   return {
     name: functionName,
     comment: getFunctionComment(functionDeclaration),

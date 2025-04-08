@@ -24,6 +24,8 @@
     "eslint-plugin-n": "^16.6.2",
     "eslint-plugin-promise": "^6.1.1",
     "prettier": "3.2.5",
-    "typescript": "5.4.3"
+    "typescript": "5.4.3",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.51.0",
+    "zod": "^3.24.2"
   }
 }

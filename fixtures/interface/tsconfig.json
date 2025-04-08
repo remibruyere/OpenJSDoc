@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "module": "commonjs",
+    "target": "es6",
+    "lib": [
+      "es6",
+      "dom",
+      "esnext"
+    ],
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
+    "noImplicitReturns": true,
+    "preserveConstEnums": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "paths": {}
+  },
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
