@@ -1,0 +1,73 @@
+import ts from 'typescript';
+import { type RouterConfiguration } from './types/router-configuration';
+
+export class RouterVisitor {
+  private readonly routerFindRegex: RegExp;
+  private readonly tagRegex: RegExp;
+  private readonly basePathRegex: RegExp;
+  private readonly routerControllerRegex: RegExp;
+  routerConfigurationList: RouterConfiguration[];
+
+  constructor(
+    private readonly program: ts.Program,
+    private readonly checker: ts.TypeChecker
+  ) {
+    this.routerFindRegex = /.*router\.ts/;
+    this.tagRegex = /export const (?<tagName>.*)Router/g;
+    this.basePathRegex =
+      /export [\w\s\\=(:,`/${}]*basePath.*= '(?<basePath>.*)'/g;
+    this.routerControllerRegex =
+      /RouterHelper\.(?<method>.*)\([\w\s=():,`/${}]*basePath: `(?<path>.*)`[\w\s=():,`/${}]*controller\(\s*(?<handler>[\w]*),[\w\s=():,`/${}]*\);/gm;
+    this.routerConfigurationList = [];
+  }
+
+  isRouterSourceFile(sourceFilePath: string): boolean {
+    return sourceFilePath.match(this.routerFindRegex) !== null;
+  }
+
+  visit(node: ts.Node): void {
+    if (ts.isVariableStatement(node)) {
+      const routerCode = node.getText();
+      console.log(routerCode);
+      const tagMatch = this.tagRegex.exec(routerCode);
+      const basePathMatch = this.basePathRegex.exec(routerCode);
+      const routerControllerMatches = routerCode.matchAll(
+        this.routerControllerRegex
+      );
+
+      const tagName = tagMatch?.groups?.tagName;
+      const basePath = basePathMatch?.groups?.basePath;
+
+      for (const routerControllerMatch of routerControllerMatches) {
+        const method = routerControllerMatch.groups?.method;
+        const path = routerControllerMatch.groups?.path.replace(
+          `\${basePath}`,
+          basePath ?? ''
+        );
+        const handler = routerControllerMatch.groups?.handler;
+        console.log(method, path, handler);
+
+        if (
+          handler !== undefined &&
+          method !== undefined &&
+          path !== undefined
+        ) {
+          this.routerConfigurationList.push({
+            tagName: tagName ?? '',
+            entryPointFunction: handler,
+            path,
+            method: method as
+              | 'get'
+              | 'post'
+              | 'put'
+              | 'delete'
+              | 'options'
+              | 'head'
+              | 'patch'
+              | 'trace',
+          });
+        }
+      }
+    }
+  }
+}

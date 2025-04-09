@@ -1,4 +1,32 @@
 /**
+ * Address
+ */
+export interface IAccountAddressDto {
+  readonly line1: string;
+}
+
+/**
+ * DTO for request
+ */
+interface TestReqDTO {
+  /**
+   * Uuid representing identifier of the class
+   *
+   * @format uuid
+   * @required
+   */
+  id: string;
+
+  /**
+   * Date of creation
+   *
+   * @format date
+   * @optional
+   */
+  createdAt?: string;
+}
+
+/**
  * DTO for path params
  */
 export interface IAccountFetchPathParamsRequestApiDto {
@@ -9,6 +37,12 @@ export interface IAccountFetchPathParamsRequestApiDto {
    * @required
    */
   readonly accountId: string;
+
+  readonly testSubType: {
+    test: number;
+  };
+
+  address: IAccountAddressDto;
 }
 
 export interface IAccountFetchApiRequestDto

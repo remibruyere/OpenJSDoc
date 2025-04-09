@@ -3,7 +3,11 @@ import { IAccountFetchApiRequestDto } from '../interface/account-fetch-request.d
 import { IAccountFetchApiResponseDto } from '../interface/account-fetch-response.dto.interface';
 
 /**
- * Handler for test endpoint
+ * @summary Handler for test endpoint
+ *
+ * @description This is a superb description
+ *
+ * @tagName Fetch
  *
  * @content application/json
  *

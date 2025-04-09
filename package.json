@@ -23,6 +23,7 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-n": "^16.6.2",
     "eslint-plugin-promise": "^6.1.1",
+    "neverthrow": "^8.2.0",
     "prettier": "3.2.5",
     "typescript": "5.4.3",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.51.0",

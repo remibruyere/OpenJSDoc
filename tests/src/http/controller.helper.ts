@@ -9,58 +9,80 @@ import {
 import { readBody } from './body.helper';
 import { safeValidateSchema } from './validator.helper';
 import { convertToOutputError, handleResponse } from './handle-response.helper';
+import { InternalError } from 'errors/internal-error';
 
 export function controller<
   Req extends IApiRequest<unknown, unknown, unknown>,
   Res extends
     | ControllerRawResponse
     | ControllerTypedResponse<Record<string, unknown> | void>,
->(handler: Controller<Req, Res>, requestSchema: z.ZodType<Req>) {
-  return async (res: HttpResponse, req: HttpRequest) => {
-    const requestUnverified: IApiRequestUnverified<
-      Record<string, unknown> | null,
-      Record<string, string>,
-      Record<string, string>
-    > = {
-      headers: getHeaders(req),
-      queryStringParameters: getQuery(req),
-      pathParameters: getParameters(req),
-      body: ['post', 'put', 'patch'].includes(req.getMethod())
-        ? await readBody(res, new Error())
-        : null,
-    };
+>(
+  handler: Controller<Req, Res>,
+  requestSchema: z.ZodType<Req>
+): (
+  basePath: `/${string}`
+) => (res: HttpResponse, req: HttpRequest) => Promise<void> {
+  return (basePath: `/${string}`) => {
+    return async (res: HttpResponse, req: HttpRequest): Promise<void> => {
+      /* Can't return or yield from here without responding or attaching an abort handler */
+      res.onAborted(() => {
+        res.aborted = true;
+      });
 
-    const validatedData = safeValidateSchema({
-      requestSchema: requestSchema,
-      data: {
-        headers: requestUnverified.headers,
-        pathParameters: requestUnverified.pathParameters,
-        queryStringParameters: requestUnverified.queryStringParameters,
-        body: requestUnverified.body,
-      },
-    });
-
-    if (validatedData.isErr()) {
-      return handleResponse(res, validatedData.error);
-    } else {
       try {
-        return handleResponse(res, await handler(validatedData.value));
+        const requestUnverified: IApiRequestUnverified<
+          Record<string, unknown>,
+          Record<string, string>,
+          Record<string, string>
+        > = {
+          headers: getHeaders(req),
+          queryStringParameters: getQuery(req),
+          pathParameters: getParameters(basePath, req),
+          body: ['post', 'put', 'patch'].includes(req.getMethod())
+            ? await readBody(
+                res,
+                (message) =>
+                  new InternalError(500, `Error during body read: ${message}`)
+              )
+            : {},
+        };
+
+        const validatedData = safeValidateSchema({
+          requestSchema: requestSchema,
+          data: {
+            headers: requestUnverified.headers,
+            pathParameters: requestUnverified.pathParameters,
+            queryStringParameters: requestUnverified.queryStringParameters,
+            body: requestUnverified.body,
+          },
+        });
+
+        if (validatedData.isErr()) {
+          handleResponse(res, validatedData.error);
+        } else {
+          await handler(validatedData.value)
+            .then((responseData) => handleResponse(res, responseData))
+            .catch((e) => handleResponse(res, convertToOutputError(e)));
+        }
       } catch (e) {
-        return handleResponse(res, convertToOutputError(e));
+        handleResponse(res, convertToOutputError(e));
       }
-    }
+    };
   };
 }
 
-function getParameters(req: HttpRequest): Record<string, string> {
-  return req
-    .getUrl()
+function getParameters(
+  basePath: `/${string}`,
+  req: HttpRequest
+): Record<string, string> {
+  return basePath
     .split('/')
     .filter((str) => str.startsWith(':'))
     .reduce((params: Record<string, string>, param) => {
-      const parameter = req.getParameter(param.substring(1));
+      const paramName = param.substring(1);
+      const parameter = req.getParameter(paramName);
       if (parameter) {
-        params[param] = parameter;
+        params[paramName] = parameter;
       }
       return params;
     }, {});

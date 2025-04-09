@@ -1,10 +1,10 @@
 import ts from 'typescript';
-import { parseClass } from './parser/class/class';
-import { parseFunction } from './parser/function/function';
-import { InterfaceParser } from './parser/interface/interface';
-import { parseArrowFunction } from './parser/function/arrow-function';
-import type { GlobalMetadata } from './types/globalMetadata';
-import { parseTypeAlias } from './parser/typeAlias/typeAlias';
+import { parseClass } from './ast/parser/class/class';
+import { parseFunction } from './ast/parser/function/function';
+import { InterfaceParser } from './ast/parser/interface/interface';
+import { parseArrowFunction } from './ast/parser/function/arrow-function';
+import type { GlobalMetadata } from './ast/types/global-metadata';
+import { parseTypeAlias } from './ast/parser/typeAlias/typeAlias';
 
 export class SourceFileVisitor {
   interfaceParse: InterfaceParser;
