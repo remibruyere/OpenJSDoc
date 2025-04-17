@@ -29,7 +29,10 @@ export class OpenJsDoc {
 
   computeProject(): void {
     for (const file of this.program.getSourceFiles()) {
-      if (!file.isDeclarationFile) {
+      if (
+        !file.isDeclarationFile &&
+        !this.program.isSourceFileFromExternalLibrary(file)
+      ) {
         ts.forEachChild(file, (node) => {
           this.visitor.visit(node);
           if (this.routerVisitor.isRouterSourceFile(file.fileName)) {

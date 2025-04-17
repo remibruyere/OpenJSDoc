@@ -1,10 +1,9 @@
-export interface IAccountApiDto {
-  readonly schemeSupported: Array<
-    'CARD' | 'INTERNAL' | 'SEPA_SCT_INST' | 'SEPA_SCT' | 'SEPA_SDD'
-  >;
-
-  readonly tree: {
-    leef: number;
-    leefString: string;
-  };
+export interface IIbanCreateRequestBodyApiDto {
+  test4: { test5: Array<Test> | TypeTest[] | Test };
 }
+
+export interface Test {
+  test: number;
+}
+
+export type TypeTest = { test2: number };

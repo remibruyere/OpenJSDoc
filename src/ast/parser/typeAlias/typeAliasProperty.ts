@@ -40,7 +40,7 @@ export function parseTypeAliasProperty(
     typeMetadata: {
       type: '',
       name: '',
-      subType: {},
+      subType: [],
     },
   };
 }

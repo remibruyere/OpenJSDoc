@@ -1,4 +1,4 @@
-import ts from 'typescript';
+import type ts from 'typescript';
 import { type ITypeMetadata } from '../../types/type-metadata.interface';
 
 /**
@@ -12,105 +12,149 @@ export class TypeParser {
     private readonly checker: ts.TypeChecker
   ) {}
 
-  getPropertyTypeMetadata(
-    propertySignature: ts.PropertySignature
-  ): ITypeMetadata {
-    const mainObjectType = this.checker.getTypeAtLocation(propertySignature);
-    const propertyTypeName = this.checker.typeToString(mainObjectType);
+  getPropertyTypeMetadata(symbol: ts.Symbol): ITypeMetadata | undefined {
+    if (symbol.valueDeclaration == null) {
+      return;
+    }
+    const type = this.checker.getTypeOfSymbolAtLocation(
+      symbol,
+      symbol.valueDeclaration
+    );
+    const propertyTypeName = this.checker.typeToString(type);
 
-    if (this.checker.isArrayType(mainObjectType)) {
+    if (this.checker.isArrayType(type)) {
       return {
-        name: propertySignature.name?.getText() ?? '',
-        type: 'array',
-        arrayType: this.getArrayType(propertySignature),
-        subType: this.processProperty({
-          type: mainObjectType,
-          node: propertySignature,
-        }),
-      };
-    } else {
-      return {
-        name: propertySignature.name?.getText() ?? '',
-        type: propertyTypeName.startsWith('{') ? 'object' : propertyTypeName,
-        subType: this.processProperty({
-          type: mainObjectType,
-          node: propertySignature,
-        }),
+        ...this.processArrayType(type, type.symbol, 0),
+        name: symbol.getName(),
       };
     }
-  }
-
-  private getArrayType(
-    propertySignature: ts.PropertySignature
-  ): ITypeMetadata['arrayType'] {
-    return (
-      propertySignature.type as ts.NodeWithTypeArguments
-    ).typeArguments?.flatMap((value) => {
-      if (ts.isUnionTypeNode(value)) {
-        return value.types.map((type) => {
-          if (ts.isLiteralTypeNode(type)) {
-            return {
-              type: 'string',
-              value: type.literal.getText().replaceAll("'", ''),
-            };
-          }
-          return {
-            type: 'object',
-            value: type.getText(),
-          };
-        });
-      }
-      return {
-        type: 'object',
-        value: value.getText(),
-      };
-    });
+    return {
+      name: symbol.getName(),
+      type: propertyTypeName,
+      subType: this.processProperty({
+        type,
+      }),
+    };
   }
 
   processProperty({
     type,
-    node,
     level = 0,
   }: {
     type: ts.Type;
-    node: ts.Node;
     level?: number;
   }): ITypeMetadata['subType'] {
-    let typeMetadata: ITypeMetadata['subType'];
+    if (level > 20) {
+      return;
+    }
+    const typeMetadata: ITypeMetadata[] = [];
     for (const property of type.getProperties()) {
+      if (property.valueDeclaration === undefined) {
+        continue;
+      }
       const propertyType = this.checker.getTypeOfSymbolAtLocation(
         property,
-        node
+        property.valueDeclaration
       );
       const propertySymbol = propertyType.getSymbol();
       const propertyTypeName = this.checker.typeToString(propertyType);
 
       if (this.isTypeLocal(propertySymbol) || this.isTypeLocal(property)) {
-        typeMetadata = typeMetadata ?? {};
-        if (this.checker.isArrayType(propertyType)) {
-          typeMetadata[property.name] = {
-            name: property.name,
-            type: 'array',
-            subType: this.processProperty({
-              type: propertyType,
-              node,
-              level: level + 1,
-            }),
-          };
-        } else {
-          typeMetadata[property.name] = {
-            name: property.name,
-            type: propertyTypeName,
-            subType: this.processProperty({
-              type: propertyType,
-              node,
-              level: level + 1,
-            }),
-          };
+        const items = this.processAnyType(
+          propertyType,
+          property,
+          level,
+          propertyTypeName
+        );
+        typeMetadata.push(items);
+      }
+    }
+    return typeMetadata.length === 0 ? undefined : typeMetadata;
+  }
+
+  private processAnyType(
+    propertyType: ts.Type | ts.UnionOrIntersectionType,
+    property: ts.Symbol,
+    level: number,
+    propertyTypeName: string
+  ): ITypeMetadata {
+    if (this.checker.isArrayType(propertyType)) {
+      return this.processArrayType(propertyType, property, level);
+    } else if (propertyType.isUnionOrIntersection()) {
+      return {
+        name: property.name,
+        type: 'union',
+        subType: this.processUnionType(propertyType, property, level),
+      };
+    } else {
+      return {
+        name: property.name,
+        type: propertyTypeName,
+        subType: this.processProperty({
+          type: propertyType,
+          level: level + 1,
+        }),
+      };
+    }
+  }
+
+  private processArrayType(
+    propertyType: ts.Type,
+    property: ts.Symbol,
+    level: number
+  ): ITypeMetadata {
+    const arrayElementType = this.getArrayElementType(propertyType);
+    if (
+      arrayElementType !== undefined &&
+      arrayElementType.getProperties().length > 0
+    ) {
+      return {
+        name: property.name,
+        type: 'array',
+        subType: this.processProperty({
+          type: arrayElementType,
+          level: level + 1,
+        }),
+      };
+    } else {
+      return {
+        name: property.name,
+        type: 'array',
+        subType: undefined,
+      };
+    }
+  }
+
+  private processUnionType(
+    propertyType: ts.UnionOrIntersectionType,
+    property: ts.Symbol,
+    level: number
+  ): ITypeMetadata[][] {
+    const typeMetadata: ITypeMetadata[][] = [];
+    for (const value of propertyType.types) {
+      if (this.checker.isArrayType(value)) {
+        typeMetadata.push([
+          {
+            ...this.processArrayType(value, value.symbol, 0),
+            name: value.symbol.getName(),
+          },
+        ]);
+      } else {
+        const items = this.processProperty({ type: value, level: level + 1 });
+        if (items !== undefined) {
+          typeMetadata.push(items as ITypeMetadata[]);
         }
       }
     }
     return typeMetadata;
+  }
+
+  getArrayElementType(type: ts.Type): ts.Type | undefined {
+    const symbolName = type.symbol?.getName();
+    if (symbolName === 'Array' || symbolName === 'ReadonlyArray') {
+      const typeArgs = (type as ts.TypeReference).typeArguments;
+      return typeArgs?.[0];
+    }
   }
 
   isTypeLocal(symbol: ts.Symbol | undefined): boolean {

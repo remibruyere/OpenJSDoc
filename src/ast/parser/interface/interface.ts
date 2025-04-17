@@ -1,9 +1,9 @@
-import ts, { getTextOfJSDocComment, type TypeElement } from 'typescript';
+import type ts from 'typescript';
+import { getTextOfJSDocComment } from 'typescript';
 import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
 import { type InterfacePropertyMetadata } from './types/interfacePropertyMetadata';
 import { type InterfaceMetadata } from './types/interfaceMetadata';
 import type { DecoratorMetadata } from '../../types/decorator-metadata';
-import { getPropertyGlobalComment, getTagInformation } from '../../lib/tag';
 import { TypeParser } from '../../lib/type/type-parser';
 
 export class InterfaceParser {
@@ -19,20 +19,25 @@ export class InterfaceParser {
   parseInterface(
     interfaceDeclaration: ts.InterfaceDeclaration
   ): InterfaceMetadata {
+    const name = interfaceDeclaration.name?.getText() ?? '';
+    const comment = this.getInterfaceComment(interfaceDeclaration);
+    const properties = this.parseInterfaceProperties(interfaceDeclaration);
     return {
-      name: interfaceDeclaration.name?.getText() ?? '',
-      comment: this.getInterfaceComment(interfaceDeclaration),
-      properties: this.parseInterfaceMembers(interfaceDeclaration.members),
+      name,
+      comment,
+      properties,
     };
   }
 
-  parseInterfaceMembers(
-    members: ts.NodeArray<TypeElement>
+  parseInterfaceProperties(
+    interfaceDeclaration: ts.InterfaceDeclaration
   ): InterfacePropertyMetadata[] {
     const properties: InterfacePropertyMetadata[] = [];
-    members.forEach((member) => {
-      if (ts.isPropertySignature(member)) {
-        properties.push(this.parseInterfaceProperty(member));
+    const typeAtLocation = this.checker.getTypeAtLocation(interfaceDeclaration);
+    typeAtLocation.getProperties().forEach((property) => {
+      const propertyMetadata = this.parseInterfaceProperty(property);
+      if (propertyMetadata !== undefined) {
+        properties.push(propertyMetadata);
       }
     });
     return properties;
@@ -49,31 +54,70 @@ export class InterfaceParser {
   }
 
   parseInterfaceProperty(
-    propertySignature: ts.PropertySignature
-  ): InterfacePropertyMetadata {
-    let comment: string = '';
+    propertySymbol: ts.Symbol
+  ): InterfacePropertyMetadata | undefined {
+    const comment: string = '';
     const decorators: Record<string, DecoratorMetadata> = {};
 
-    const type = this.typeParser.getPropertyTypeMetadata(propertySignature);
+    if (propertySymbol.valueDeclaration !== undefined) {
+      const type = this.typeParser.getPropertyTypeMetadata(propertySymbol);
 
-    if (canHaveJsDoc(propertySignature)) {
-      const jsDocs: ts.JSDoc[] = getJsDoc(propertySignature);
-      for (const jsDoc of jsDocs) {
-        comment = getPropertyGlobalComment(jsDoc);
-        if (jsDoc.tags != null) {
-          for (const tag of jsDoc.tags) {
-            const tagInformation = getTagInformation(tag);
-            decorators[tagInformation.name] = tagInformation;
+      /* if (canHaveJsDoc(propertySymbol.getJsDocTags(this.checker))) {
+        const jsDocs: ts.JSDoc[] = getJsDoc(propertySymbol);
+        for (const jsDoc of jsDocs) {
+          comment = getPropertyGlobalComment(jsDoc);
+          if (jsDoc.tags != null) {
+            for (const tag of jsDoc.tags) {
+              const tagInformation = getTagInformation(tag);
+              decorators[tagInformation.name] = tagInformation;
+            }
           }
+        }
+      } */
+
+      if (type != null) {
+        return {
+          name: propertySymbol.getName(),
+          comment,
+          decorators,
+          typeMetadata: type,
+        };
+      }
+    }
+  }
+
+  flattenType(
+    type: ts.Type,
+    prefix: string = '',
+    result: Record<string, string> = {},
+    visited = new Set<ts.Type>()
+  ): Record<string, string> {
+    if (visited.has(type)) return result;
+    visited.add(type);
+
+    for (const prop of type.getProperties()) {
+      const name = prop.getName();
+      const fullName = prefix !== '' ? `${prefix}.${name}` : name;
+
+      if (prop.valueDeclaration !== undefined) {
+        const propType = this.checker.getTypeOfSymbolAtLocation(
+          prop,
+          prop.valueDeclaration
+        );
+        const typeStr = this.checker.typeToString(propType);
+
+        if (
+          propType.isClassOrInterface() ||
+          (propType.getProperties().length > 0 &&
+            propType.getCallSignatures().length === 0)
+        ) {
+          this.flattenType(propType, fullName, result, visited);
+        } else {
+          result[fullName] = typeStr;
         }
       }
     }
 
-    return {
-      name: propertySignature.name.getText(),
-      comment,
-      decorators,
-      typeMetadata: type,
-    };
+    return result;
   }
 }

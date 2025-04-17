@@ -3,7 +3,6 @@ import { type GlobalMetadata } from '../ast/types/global-metadata';
 import { type PathConfiguration } from '../ast/types/path-configuration';
 import { OpenApiDocComponentBuilder } from './component-builder';
 import { OpenApiDocPathBuilder } from './path-builder';
-import type { RouterConfiguration } from '../plugins/cbs/types/router-configuration';
 
 export class OpenApiDocBuilder {
   openApiBuilder: OpenApiBuilder;
@@ -37,7 +36,10 @@ export class OpenApiDocBuilder {
     this.openApiComponentBuilder = new OpenApiDocComponentBuilder(
       this.openApiBuilder
     );
-    this.openApiDocPathBuilder = new OpenApiDocPathBuilder(this.openApiBuilder);
+    this.openApiDocPathBuilder = new OpenApiDocPathBuilder(
+      this.openApiBuilder,
+      this.openApiComponentBuilder
+    );
   }
 
   getAsJson(): string {
@@ -48,14 +50,23 @@ export class OpenApiDocBuilder {
     return this.openApiBuilder.getSpecAsYaml();
   }
 
-  addComponentConfiguration(globalMetadata: GlobalMetadata): this {
-    globalMetadata.classMetadata.forEach((metadata) => {
-      this.openApiComponentBuilder.addComponent(metadata);
-    });
+  addComponentConfiguration(
+    globalMetadata: GlobalMetadata,
+    typeUsedInPath: string[]
+  ): this {
+    globalMetadata.classMetadata
+      .filter((classMetadata) => typeUsedInPath.includes(classMetadata.name))
+      .forEach((metadata) => {
+        this.openApiComponentBuilder.addComponent(metadata);
+      });
 
-    globalMetadata.interfaceMetadata.forEach((metadata) => {
-      this.openApiComponentBuilder.addComponent(metadata);
-    });
+    globalMetadata.interfaceMetadata
+      .filter((interfaceMetadata) =>
+        typeUsedInPath.includes(interfaceMetadata.name)
+      )
+      .forEach((metadata) => {
+        this.openApiComponentBuilder.addComponent(metadata);
+      });
 
     return this;
   }
@@ -64,13 +75,13 @@ export class OpenApiDocBuilder {
     entryPointFunction: string,
     pathConfiguration: PathConfiguration,
     globalMetadata: GlobalMetadata
-  ): this {
-    this.openApiDocPathBuilder.addPath({
+  ): {
+    typeNameUsed: string[];
+  } {
+    return this.openApiDocPathBuilder.addPath({
       entryPointFunction,
       pathConfiguration,
       globalMetadata,
     });
-
-    return this;
   }
 }

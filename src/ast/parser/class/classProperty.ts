@@ -40,7 +40,7 @@ export function parseClassProperty(
     typeMetadata: {
       type: '',
       name: '',
-      subType: {},
+      subType: [],
     },
   };
 }

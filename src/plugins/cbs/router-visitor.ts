@@ -27,8 +27,10 @@ export class RouterVisitor {
 
   visit(node: ts.Node): void {
     if (ts.isVariableStatement(node)) {
+      this.tagRegex.lastIndex = 0;
+      this.basePathRegex.lastIndex = 0;
+      this.routerControllerRegex.lastIndex = 0;
       const routerCode = node.getText();
-      console.log(routerCode);
       const tagMatch = this.tagRegex.exec(routerCode);
       const basePathMatch = this.basePathRegex.exec(routerCode);
       const routerControllerMatches = routerCode.matchAll(
@@ -45,7 +47,6 @@ export class RouterVisitor {
           basePath ?? ''
         );
         const handler = routerControllerMatch.groups?.handler;
-        console.log(method, path, handler);
 
         if (
           handler !== undefined &&

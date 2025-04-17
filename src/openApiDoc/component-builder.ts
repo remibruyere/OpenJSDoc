@@ -8,12 +8,27 @@ import {
   type SchemaObjectType,
 } from 'openapi3-ts/src/model/openapi31';
 import { type ITypeMetadata } from '../ast/types/type-metadata.interface';
+import type { GlobalMetadata } from '../ast/types/global-metadata';
 
 export class OpenApiDocComponentBuilder {
   openApiBuilder: OpenApiBuilder;
 
   constructor(openApiBuilder: OpenApiBuilder) {
     this.openApiBuilder = openApiBuilder;
+  }
+
+  findComponent(
+    globalMetadata: GlobalMetadata,
+    typeName: string
+  ): Array<ClassMetadata | InterfaceMetadata | undefined> {
+    return [
+      ...globalMetadata.classMetadata.filter(
+        (classMetadata) => classMetadata.name === typeName
+      ),
+      ...globalMetadata.interfaceMetadata.filter(
+        (interfaceMetadata) => interfaceMetadata.name === typeName
+      ),
+    ];
   }
 
   addComponent(metadata: ClassMetadata | InterfaceMetadata): void {
@@ -26,6 +41,37 @@ export class OpenApiDocComponentBuilder {
           [currentValue.name]: this.getPropertyDefinition(currentValue),
         };
       }, {}),
+    });
+  }
+
+  addTypeMetadata(metadata: ITypeMetadata, summary?: string): void {
+    this.openApiBuilder.addSchema(metadata.name, {
+      title: metadata.name,
+      summary,
+      properties: metadata.subType?.reduce(
+        (
+          previousValue: Record<string, SchemaObject | ReferenceObject>,
+          currentValue
+        ) => {
+          const property = this.getSubTypePropertyDefinition(
+            Object.values(currentValue)
+          );
+          if (property === undefined) {
+            return previousValue;
+          }
+          if (Array.isArray(currentValue)) {
+            return {
+              ...previousValue,
+              [currentValue[0].name]: property,
+            };
+          }
+          return {
+            ...previousValue,
+            [currentValue.name]: property,
+          };
+        },
+        {}
+      ),
     });
   }
 
@@ -87,12 +133,12 @@ export class OpenApiDocComponentBuilder {
 
   convertToType(decoratorType: string): SchemaObjectType {
     switch (decoratorType) {
-      case 'string':
-        return 'string';
-      case 'number':
-        return 'number';
       case 'integer':
         return 'integer';
+      case 'number':
+        return 'number';
+      case 'string':
+        return 'string';
       case 'boolean':
         return 'boolean';
       case 'object':

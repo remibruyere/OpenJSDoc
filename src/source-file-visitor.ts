@@ -36,7 +36,7 @@ export class SourceFileVisitor {
     } else if (ts.isTypeAliasDeclaration(node)) {
       this.globalMetadata.interfaceMetadata.push(parseTypeAlias(node));
     } else if (ts.isArrowFunction(node)) {
-      const functionMetadata = parseArrowFunction(node);
+      const functionMetadata = parseArrowFunction(node, this.checker);
       if (functionMetadata !== undefined) {
         this.globalMetadata.functionMetadata.push(functionMetadata);
       }
@@ -44,5 +44,6 @@ export class SourceFileVisitor {
     ts.forEachChild(node, (node) => {
       this.visit(node);
     });
+    this.interfaceParse.convertInterface();
   }
 }

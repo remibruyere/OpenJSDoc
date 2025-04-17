@@ -7,8 +7,6 @@ import { IAccountFetchApiResponseDto } from '../interface/account-fetch-response
  *
  * @description This is a superb description
  *
- * @tagName Fetch
- *
  * @content application/json
  *
  * @request {IAccountFetchApiRequestDto} Request body test dto
