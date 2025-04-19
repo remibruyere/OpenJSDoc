@@ -4,10 +4,11 @@ import { parseFunction } from './ast/parser/function/function';
 import { InterfaceParser } from './ast/parser/interface/interface';
 import { parseArrowFunction } from './ast/parser/function/arrow-function';
 import type { GlobalMetadata } from './ast/types/global-metadata';
-import { parseTypeAlias } from './ast/parser/typeAlias/typeAlias';
+import { TypeAliasParser } from './ast/parser/typeAlias/typeAlias';
 
 export class SourceFileVisitor {
   interfaceParse: InterfaceParser;
+  typeAliasParser: TypeAliasParser;
   globalMetadata: GlobalMetadata = {
     functionMetadata: [],
     classMetadata: [],
@@ -19,6 +20,7 @@ export class SourceFileVisitor {
     private readonly checker: ts.TypeChecker
   ) {
     this.interfaceParse = new InterfaceParser(this.program, this.checker);
+    this.typeAliasParser = new TypeAliasParser(this.program, this.checker);
   }
 
   visit(node: ts.Node): void {
@@ -34,7 +36,9 @@ export class SourceFileVisitor {
         this.interfaceParse.parseInterface(node)
       );
     } else if (ts.isTypeAliasDeclaration(node)) {
-      this.globalMetadata.interfaceMetadata.push(parseTypeAlias(node));
+      this.globalMetadata.interfaceMetadata.push(
+        this.typeAliasParser.parseTypeAlias(node)
+      );
     } else if (ts.isArrowFunction(node)) {
       const functionMetadata = parseArrowFunction(node, this.checker);
       if (functionMetadata !== undefined) {
@@ -44,6 +48,5 @@ export class SourceFileVisitor {
     ts.forEachChild(node, (node) => {
       this.visit(node);
     });
-    this.interfaceParse.convertInterface();
   }
 }

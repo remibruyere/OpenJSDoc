@@ -9,7 +9,7 @@ function main(): void {
   // const openJsDoc = new OpenJsDoc('./fixtures/arrow-function/tsconfig.json');
   // const openJsDoc = new OpenJsDoc('./tests/tsconfig.json');
   const openJsDoc = new OpenJsDoc(
-    '/Users/remibruyere/Documents/easy-pro/projects/fork-cbs/cbs-iban/tsconfig.json'
+    '/Users/remibruyere/Documents/easy-pro/projects/fork-cbs/workflow-orchestrator-ledger/tsconfig.json'
   );
 
   openJsDoc.computeProject();

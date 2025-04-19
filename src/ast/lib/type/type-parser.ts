@@ -1,18 +1,22 @@
 import type ts from 'typescript';
-import { type ITypeMetadata } from '../../types/type-metadata.interface';
+import { TypeFlags } from 'typescript';
+import {
+  type AndType,
+  type AnyType,
+  type ArrayType,
+  type NodeType,
+  type ObjectProperty,
+  type ObjectType,
+  type OrType,
+} from '../../types/node-types';
 
-/**
- * https://www.satellytes.com/blog/post/typescript-ast-type-checker/
- * https://ts-ast-viewer.com/#code
- * https://github.com/microsoft/vscode/blob/main/build/lib/mangle/index.ts
- */
 export class TypeParser {
   constructor(
     private readonly program: ts.Program,
     private readonly checker: ts.TypeChecker
   ) {}
 
-  getPropertyTypeMetadata(symbol: ts.Symbol): ITypeMetadata | undefined {
+  getObjectProperty(symbol: ts.Symbol, level = 0): ObjectProperty | undefined {
     if (symbol.valueDeclaration == null) {
       return;
     }
@@ -20,34 +24,143 @@ export class TypeParser {
       symbol,
       symbol.valueDeclaration
     );
-    const propertyTypeName = this.checker.typeToString(type);
 
-    if (this.checker.isArrayType(type)) {
-      return {
-        ...this.processArrayType(type, type.symbol, 0),
-        name: symbol.getName(),
-      };
+    const anyTypeResult = this.processAnyType(type, type.symbol, level + 1);
+    if (anyTypeResult.node === undefined) {
+      return undefined;
     }
     return {
-      name: symbol.getName(),
-      type: propertyTypeName,
-      subType: this.processProperty({
-        type,
-      }),
+      required: anyTypeResult.required,
+      node: anyTypeResult.node,
     };
   }
 
-  processProperty({
+  private processAnyType(
+    propertyType: ts.Type,
+    property: ts.Symbol,
+    level: number
+  ): { node: NodeType | undefined; required: boolean } {
+    if (this.checker.isArrayType(propertyType)) {
+      return {
+        node: this.processArrayType(propertyType, property, level + 1),
+        required: true,
+      };
+    } else if (propertyType.isIntersection()) {
+      return this.processIntersectionType(propertyType, level + 1);
+    } else if (propertyType.isUnion()) {
+      return this.processUnionType(propertyType, property, level + 1);
+    } else if (propertyType.isNumberLiteral()) {
+      return {
+        node: {
+          type: 'number',
+          const: propertyType.value,
+        },
+        required: true,
+      };
+    } else if (propertyType.isStringLiteral()) {
+      return {
+        node: {
+          type: 'string',
+          const: propertyType.value,
+        },
+        required: true,
+      };
+    } else if (propertyType.flags === TypeFlags.Boolean) {
+      console.log(propertyType);
+      return {
+        node: {
+          type: 'boolean',
+        },
+        required: true,
+      };
+    } else if (propertyType.flags === TypeFlags.BooleanLiteral) {
+      return {
+        node: {
+          type: 'boolean',
+          const: this.checker.typeToString(propertyType) === 'true',
+        },
+        required: true,
+      };
+    } else if (propertyType.flags === TypeFlags.Number) {
+      return {
+        node: {
+          type: 'number',
+        },
+        required: true,
+      };
+    } else if (
+      propertyType.flags === TypeFlags.String ||
+      propertyType.flags === TypeFlags.TemplateLiteral
+    ) {
+      return {
+        node: {
+          type: 'string',
+        },
+        required: true,
+      };
+    } else if (
+      [TypeFlags.Undefined, TypeFlags.Void, TypeFlags.VoidLike].includes(
+        propertyType.flags
+      )
+    ) {
+      return { node: undefined, required: false };
+    } else if ([TypeFlags.Object].includes(propertyType.flags)) {
+      return {
+        node: this.processObjectProperty({
+          type: propertyType,
+          level: level + 1,
+        }),
+        required: true,
+      };
+    } else if (
+      [TypeFlags.TypeParameter, TypeFlags.Conditional].includes(
+        propertyType.flags
+      )
+    ) {
+      return { node: undefined, required: true };
+    } else if (propertyType.flags === TypeFlags.Null) {
+      return { node: { type: 'null' }, required: true };
+    } else if (propertyType.flags === TypeFlags.Any) {
+      return {
+        node: {
+          type: 'any',
+        },
+        required: true,
+      };
+    } else {
+      console.log(new Error(`Unsupported flag ${propertyType.flags}`));
+      console.log(propertyType);
+      return {
+        node: this.processObjectProperty({
+          type: propertyType,
+          level: level + 1,
+        }),
+        required: true,
+      };
+    }
+  }
+
+  processObjectProperty({
     type,
     level = 0,
   }: {
     type: ts.Type;
     level?: number;
-  }): ITypeMetadata['subType'] {
+  }): ObjectType | AnyType | undefined {
     if (level > 20) {
-      return;
+      return {
+        type: 'any',
+      } satisfies AnyType;
     }
-    const typeMetadata: ITypeMetadata[] = [];
+    if (this.checker.typeToString(type).match(/Record<.*never>/) !== null) {
+      return undefined;
+    }
+    const objectType: ObjectType = {
+      name: this.checker.typeToString(type),
+      type: 'object',
+      properties: {},
+      additionalProperties: false,
+    };
     for (const property of type.getProperties()) {
       if (property.valueDeclaration === undefined) {
         continue;
@@ -57,53 +170,46 @@ export class TypeParser {
         property.valueDeclaration
       );
       const propertySymbol = propertyType.getSymbol();
-      const propertyTypeName = this.checker.typeToString(propertyType);
 
       if (this.isTypeLocal(propertySymbol) || this.isTypeLocal(property)) {
-        const items = this.processAnyType(
-          propertyType,
-          property,
-          level,
-          propertyTypeName
-        );
-        typeMetadata.push(items);
+        const objectProp = this.getObjectProperty(property, level + 1);
+        if (objectProp !== undefined) {
+          Object.assign(objectType.properties, {
+            [property.name]: objectProp,
+          });
+        }
       }
     }
-    return typeMetadata.length === 0 ? undefined : typeMetadata;
-  }
-
-  private processAnyType(
-    propertyType: ts.Type | ts.UnionOrIntersectionType,
-    property: ts.Symbol,
-    level: number,
-    propertyTypeName: string
-  ): ITypeMetadata {
-    if (this.checker.isArrayType(propertyType)) {
-      return this.processArrayType(propertyType, property, level);
-    } else if (propertyType.isUnionOrIntersection()) {
-      return {
-        name: property.name,
-        type: 'union',
-        subType: this.processUnionType(propertyType, property, level),
-      };
-    } else {
-      return {
-        name: property.name,
-        type: propertyTypeName,
-        subType: this.processProperty({
-          type: propertyType,
-          level: level + 1,
-        }),
-      };
-    }
+    Object.entries(objectType.properties).forEach((value) => {
+      if (value[1].node.type === 'or') {
+        const booleans = value[1].node.or.filter(
+          (orProp) => orProp.type === 'boolean'
+        );
+        if (booleans.length === 2) {
+          if (value[1].node.or.length === 2) {
+            value[1].node = {
+              type: 'boolean',
+            };
+          } else {
+            value[1].node.or = [
+              ...value[1].node.or.filter((orProp) => orProp.type !== 'boolean'),
+              {
+                type: 'boolean',
+              },
+            ];
+          }
+        }
+      }
+    });
+    return objectType;
   }
 
   private processArrayType(
     propertyType: ts.Type,
     property: ts.Symbol,
     level: number
-  ): ITypeMetadata {
-    const arrayElementType = this.getArrayElementType(propertyType);
+  ): ArrayType {
+    const arrayElementType = this.getArrayItemType(propertyType);
     if (
       arrayElementType !== undefined &&
       arrayElementType.getProperties().length > 0
@@ -111,16 +217,21 @@ export class TypeParser {
       return {
         name: property.name,
         type: 'array',
-        subType: this.processProperty({
-          type: arrayElementType,
-          level: level + 1,
-        }),
+        elementType: this.processAnyType(
+          arrayElementType,
+          arrayElementType.symbol,
+          level + 1
+        ).node ?? {
+          type: 'null',
+        },
       };
     } else {
       return {
         name: property.name,
         type: 'array',
-        subType: undefined,
+        elementType: {
+          type: 'any',
+        },
       };
     }
   }
@@ -129,27 +240,53 @@ export class TypeParser {
     propertyType: ts.UnionOrIntersectionType,
     property: ts.Symbol,
     level: number
-  ): ITypeMetadata[][] {
-    const typeMetadata: ITypeMetadata[][] = [];
+  ): { node: NodeType | undefined; required: boolean } {
+    const nodeType: OrType = {
+      type: 'or',
+      or: [],
+    };
     for (const value of propertyType.types) {
-      if (this.checker.isArrayType(value)) {
-        typeMetadata.push([
-          {
-            ...this.processArrayType(value, value.symbol, 0),
-            name: value.symbol.getName(),
-          },
-        ]);
-      } else {
-        const items = this.processProperty({ type: value, level: level + 1 });
-        if (items !== undefined) {
-          typeMetadata.push(items as ITypeMetadata[]);
-        }
+      const anyTypeResult = this.processAnyType(value, value.symbol, level + 1);
+      if (anyTypeResult.node !== undefined) {
+        nodeType.or.push(anyTypeResult.node);
       }
     }
-    return typeMetadata;
+    if (propertyType.types.length > 1 && nodeType.or.length === 1) {
+      return {
+        node: nodeType.or[0],
+        required: false,
+      };
+    }
+    if (nodeType.or.length === 0) {
+      return { node: undefined, required: false };
+    }
+    return {
+      node: nodeType,
+      required: propertyType.types.length === nodeType.or.length,
+    };
   }
 
-  getArrayElementType(type: ts.Type): ts.Type | undefined {
+  private processIntersectionType(
+    propertyType: ts.UnionOrIntersectionType,
+    level: number
+  ): { node: NodeType | undefined; required: boolean } {
+    const nodeType: AndType = {
+      type: 'and',
+      and: [],
+    };
+    for (const value of propertyType.types) {
+      const anyTypeResult = this.processAnyType(value, value.symbol, level + 1);
+      if (anyTypeResult.node !== undefined) {
+        nodeType.and.push(anyTypeResult.node);
+      }
+    }
+    return {
+      node: nodeType,
+      required: true,
+    };
+  }
+
+  private getArrayItemType(type: ts.Type): ts.Type | undefined {
     const symbolName = type.symbol?.getName();
     if (symbolName === 'Array' || symbolName === 'ReadonlyArray') {
       const typeArgs = (type as ts.TypeReference).typeArguments;
@@ -157,7 +294,7 @@ export class TypeParser {
     }
   }
 
-  isTypeLocal(symbol: ts.Symbol | undefined): boolean {
+  private isTypeLocal(symbol: ts.Symbol | undefined): boolean {
     const sourceFile = symbol?.valueDeclaration?.getSourceFile();
     const hasSource = !(sourceFile == null);
     const isStandardLibrary =

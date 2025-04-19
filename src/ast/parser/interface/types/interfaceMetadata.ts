@@ -1,7 +1,3 @@
-import { type InterfacePropertyMetadata } from './interfacePropertyMetadata';
+import { type NamedType } from '../../../types/node-types';
 
-export interface InterfaceMetadata {
-  name: string;
-  properties: InterfacePropertyMetadata[];
-  comment: string;
-}
+export type InterfaceMetadata = NamedType;

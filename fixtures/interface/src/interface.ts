@@ -3,6 +3,7 @@
  */
 export interface IAccountAddressDto {
   readonly line1: string;
+  readonly line2?: number;
 }
 
 /**
@@ -39,7 +40,9 @@ export interface IAccountFetchPathParamsRequestApiDto {
   readonly accountId: string;
 
   readonly testSubType: {
-    test: number;
+    test: {
+      address: string;
+    };
   };
 
   address: IAccountAddressDto;

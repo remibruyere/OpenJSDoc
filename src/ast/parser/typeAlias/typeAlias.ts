@@ -2,41 +2,80 @@ import ts from 'typescript';
 import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
 import { type InterfaceMetadata } from '../interface/types/interfaceMetadata';
 import { type InterfacePropertyMetadata } from '../interface/types/interfacePropertyMetadata';
-import { parseTypeAliasProperty } from './typeAliasProperty';
+import { TypeParser } from '../../lib/type/type-parser';
 
-export function parseTypeAlias(
-  typeAliasDeclaration: ts.TypeAliasDeclaration
-): InterfaceMetadata {
-  return {
-    name: typeAliasDeclaration.name?.getText() ?? '',
-    comment: getInterfaceComment(typeAliasDeclaration),
-    properties:
-      typeAliasDeclaration.type !== undefined
-        ? parseTypeMembers(typeAliasDeclaration.type)
-        : [],
-  };
-}
+export class TypeAliasParser {
+  typeParser: TypeParser;
 
-function parseTypeMembers(node: ts.TypeNode): InterfacePropertyMetadata[] {
-  const properties: InterfacePropertyMetadata[] = [];
-  if (ts.isTypeLiteralNode(node)) {
-    node.members.forEach((member) => {
-      if (ts.isPropertySignature(member)) {
-        properties.push(parseTypeAliasProperty(member));
+  constructor(
+    private readonly program: ts.Program,
+    private readonly checker: ts.TypeChecker
+  ) {
+    this.typeParser = new TypeParser(program, checker);
+  }
+
+  parseTypeAlias(
+    typeAliasDeclaration: ts.TypeAliasDeclaration
+  ): InterfaceMetadata {
+    return {
+      name: typeAliasDeclaration.name?.getText() ?? '',
+      type: 'object',
+      description: this.getDescription(typeAliasDeclaration),
+      properties:
+        typeAliasDeclaration.type !== undefined
+          ? this.parseMembers(
+              this.checker.getTypeAtLocation(typeAliasDeclaration)
+            )
+          : {},
+      additionalProperties: false,
+    };
+  }
+
+  parseMembers(node: ts.Type): InterfacePropertyMetadata {
+    const properties: InterfacePropertyMetadata = {};
+    node.getProperties().forEach((prop) => {
+      const memberMetadata = this.parseTypeAliasProperty(prop);
+      if (memberMetadata !== undefined) {
+        Object.assign(properties, memberMetadata);
       }
     });
+    return properties;
   }
-  return properties;
-}
 
-function getInterfaceComment(
-  typeAliasDeclaration: ts.TypeAliasDeclaration
-): string {
-  if (canHaveJsDoc(typeAliasDeclaration)) {
-    const jsDocs: ts.JSDoc[] = getJsDoc(typeAliasDeclaration);
-    if (jsDocs[0] !== undefined) {
-      return ts.getTextOfJSDocComment(jsDocs[0].comment) ?? '';
+  getDescription(typeAliasDeclaration: ts.TypeAliasDeclaration): string {
+    if (canHaveJsDoc(typeAliasDeclaration)) {
+      const jsDocs: ts.JSDoc[] = getJsDoc(typeAliasDeclaration);
+      if (jsDocs[0] !== undefined) {
+        return ts.getTextOfJSDocComment(jsDocs[0].comment) ?? '';
+      }
     }
+    return '';
   }
-  return '';
+
+  parseTypeAliasProperty(
+    propertySymbol: ts.Symbol
+  ): InterfacePropertyMetadata | undefined {
+    const nodeObject = this.typeParser.getObjectProperty(propertySymbol);
+
+    // if (canHaveJsDoc(propertySignature)) {
+    //   const jsDocs: ts.JSDoc[] = getJsDoc(propertySignature);
+    //   for (const jsDoc of jsDocs) {
+    //     comment = getPropertyGlobalComment(jsDoc);
+    //     if (jsDoc.tags != null) {
+    //       for (const tag of jsDoc.tags) {
+    //         const tagInformation = getTagInformation(tag);
+    //         decorators[tagInformation.name] = tagInformation;
+    //       }
+    //     }
+    //   }
+    // }
+
+    if (nodeObject === undefined) {
+      return undefined;
+    }
+
+    return {
+      [propertySymbol.getName()]: nodeObject,
+    };
+  }
 }

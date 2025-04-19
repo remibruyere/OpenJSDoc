@@ -54,11 +54,11 @@ export class OpenApiDocBuilder {
     globalMetadata: GlobalMetadata,
     typeUsedInPath: string[]
   ): this {
-    globalMetadata.classMetadata
-      .filter((classMetadata) => typeUsedInPath.includes(classMetadata.name))
-      .forEach((metadata) => {
-        this.openApiComponentBuilder.addComponent(metadata);
-      });
+    // globalMetadata.classMetadata
+    //   .filter((classMetadata) => typeUsedInPath.includes(classMetadata.name))
+    //   .forEach((metadata) => {
+    //     this.openApiComponentBuilder.addComponent(metadata);
+    //   });
 
     globalMetadata.interfaceMetadata
       .filter((interfaceMetadata) =>

@@ -1,9 +1,3 @@
-import { type DecoratorMetadata } from '../../../types/decorator-metadata';
-import { type ITypeMetadata } from '../../../types/type-metadata.interface';
+import { type ObjectProperty } from '../../../types/node-types';
 
-export interface InterfacePropertyMetadata {
-  name: string;
-  comment: string;
-  decorators: Record<string, DecoratorMetadata | undefined>;
-  typeMetadata: ITypeMetadata;
-}
+export type InterfacePropertyMetadata = Record<string, ObjectProperty>;

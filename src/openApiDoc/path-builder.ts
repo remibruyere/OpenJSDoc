@@ -1,6 +1,7 @@
 import {
   type OpenApiBuilder,
   type ParameterObject,
+  type ReferenceObject,
   type RequestBodyObject,
   type ResponsesObject,
   type SchemaObject,
@@ -9,10 +10,8 @@ import { type GlobalMetadata } from '../ast/types/global-metadata';
 import { type PathConfiguration } from '../ast/types/path-configuration';
 import type { DecoratorMetadata } from '../ast/types/decorator-metadata';
 import { type OpenApiDocComponentBuilder } from './component-builder';
-import { type ClassPropertyMetadata } from '../ast/parser/class/types/classPropertyMetadata';
-import { type InterfacePropertyMetadata } from '../ast/parser/interface/types/interfacePropertyMetadata';
-import { type ReferenceObject } from 'openapi3-ts/src/model/openapi31';
-import { type ITypeMetadata } from '../ast/types/type-metadata.interface';
+import { type NamedType, type ObjectProperty } from '../ast/types/node-types';
+import { OpenApiDocComponentNodeTypeBuilder } from './component-node-type-builder';
 
 export class OpenApiDocPathBuilder {
   openApiBuilder: OpenApiBuilder;
@@ -91,20 +90,20 @@ export class OpenApiDocPathBuilder {
     };
   }
 
-  getParameters(
-    queryArray: Array<ClassPropertyMetadata | InterfacePropertyMetadata>
-  ): ParameterObject[] {
+  getParameters(queryArray: NamedType[]): ParameterObject[] {
     return queryArray
-      .filter((query) => query.typeMetadata.subType !== undefined)
+      .filter((query) => query.type === 'object')
       .flatMap((query): ParameterObject[] | undefined =>
-        query.typeMetadata.subType?.flatMap(
-          (subType) =>
+        Object.entries(query.properties).map(
+          (prop) =>
             ({
-              name: (subType as ITypeMetadata).name,
+              name: prop[0],
               in: 'query',
-              schema: {
-                type: 'string',
-              },
+              schema:
+                OpenApiDocComponentNodeTypeBuilder.convertNodeTypeToSchemaObject(
+                  prop[1].node
+                ),
+              required: prop[1].required,
             }) satisfies ParameterObject
         )
       )
@@ -117,10 +116,10 @@ export class OpenApiDocPathBuilder {
   ):
     | {
         name: string;
-        body: ClassPropertyMetadata | InterfacePropertyMetadata;
-        headers: ClassPropertyMetadata | InterfacePropertyMetadata;
-        path: ClassPropertyMetadata | InterfacePropertyMetadata;
-        query: ClassPropertyMetadata | InterfacePropertyMetadata;
+        body: ObjectProperty | undefined;
+        headers: ObjectProperty | undefined;
+        path: ObjectProperty | undefined;
+        query: ObjectProperty | undefined;
       }
     | undefined {
     // We will only take the first found, it can cause problem on multiple
@@ -134,20 +133,26 @@ export class OpenApiDocPathBuilder {
       return;
     }
 
+    if (matchComponents.type !== 'object') {
+      throw new Error(
+        `Request type ${typeName} is not an object. You need to provide an object as input request handler to use this lib`
+      );
+    }
+
     return {
       name: matchComponents.name,
-      body: matchComponents.properties.filter(
-        (prop) => prop.name === 'body'
-      )[0],
-      headers: matchComponents.properties.filter(
-        (prop) => prop.name === 'headers'
-      )[0],
-      path: matchComponents.properties.filter(
-        (prop) => prop.name === 'pathParameters'
-      )[0],
-      query: matchComponents.properties.filter(
-        (prop) => prop.name === 'queryStringParameters'
-      )[0],
+      body: Object.entries(matchComponents.properties).filter(
+        (prop) => prop[0] === 'body'
+      )[0]?.[1],
+      headers: Object.entries(matchComponents.properties).filter(
+        (prop) => prop[0] === 'headers'
+      )[0]?.[1],
+      path: Object.entries(matchComponents.properties).filter(
+        (prop) => prop[0] === 'pathParameters'
+      )[0]?.[1],
+      query: Object.entries(matchComponents.properties).filter(
+        (prop) => prop[0] === 'queryStringParameters'
+      )[0]?.[1],
     };
   }
 
@@ -156,10 +161,10 @@ export class OpenApiDocPathBuilder {
     globalMetadata: GlobalMetadata
   ):
     | {
-        body: Array<ClassPropertyMetadata | InterfacePropertyMetadata>;
-        headers: Array<ClassPropertyMetadata | InterfacePropertyMetadata>;
-        path: Array<ClassPropertyMetadata | InterfacePropertyMetadata>;
-        query: Array<ClassPropertyMetadata | InterfacePropertyMetadata>;
+        body: NamedType[];
+        headers: NamedType[];
+        path: NamedType[];
+        query: NamedType[];
       }
     | undefined {
     if (decorators?.request === undefined) {
@@ -177,10 +182,10 @@ export class OpenApiDocPathBuilder {
     }
 
     const contentByLocationArray: {
-      body: Array<ClassPropertyMetadata | InterfacePropertyMetadata>;
-      headers: Array<ClassPropertyMetadata | InterfacePropertyMetadata>;
-      path: Array<ClassPropertyMetadata | InterfacePropertyMetadata>;
-      query: Array<ClassPropertyMetadata | InterfacePropertyMetadata>;
+      body: NamedType[];
+      headers: NamedType[];
+      path: NamedType[];
+      query: NamedType[];
     } = {
       body: [],
       headers: [],
@@ -192,34 +197,60 @@ export class OpenApiDocPathBuilder {
         globalMetadata,
         requestTypeSplitElement
       );
-      if (contentByLocation !== undefined) {
-        const body: ClassPropertyMetadata | InterfacePropertyMetadata = {
-          ...contentByLocation.body,
+      if (contentByLocation === undefined) {
+        continue;
+      }
+
+      if (contentByLocation.body !== undefined) {
+        const body: NamedType = {
+          ...contentByLocation.body?.node,
           name: `${contentByLocation.name}Body`,
         };
-        contentByLocationArray.body.push(body);
-        this.openApiDocComponentBuilder.addTypeMetadata(
-          body.typeMetadata,
-          body.comment
-        );
 
-        const headers: ClassPropertyMetadata | InterfacePropertyMetadata = {
-          ...contentByLocation.headers,
+        contentByLocationArray.body.push(body);
+        this.openApiDocComponentBuilder.addComponent({
+          ...contentByLocation.body.node,
+          name: `${contentByLocation.name}Body`,
+        });
+      }
+
+      if (contentByLocation.headers !== undefined) {
+        const headers: NamedType = {
+          ...contentByLocation.headers?.node,
           name: `${contentByLocation.name}Headers`,
         };
-        contentByLocationArray.headers.push(headers);
 
-        const path: ClassPropertyMetadata | InterfacePropertyMetadata = {
-          ...contentByLocation.path,
+        contentByLocationArray.headers.push(headers);
+        this.openApiDocComponentBuilder.addComponent({
+          ...contentByLocation.headers.node,
+          name: `${contentByLocation.name}Headers`,
+        });
+      }
+
+      if (contentByLocation.path !== undefined) {
+        const path: NamedType = {
+          ...contentByLocation.path?.node,
           name: `${contentByLocation.name}Path`,
         };
-        contentByLocationArray.path.push(path);
 
-        const query: ClassPropertyMetadata | InterfacePropertyMetadata = {
-          ...contentByLocation.query,
+        contentByLocationArray.path.push(path);
+        this.openApiDocComponentBuilder.addComponent({
+          ...contentByLocation.path.node,
+          name: `${contentByLocation.name}Path`,
+        });
+      }
+
+      if (contentByLocation.query !== undefined) {
+        const query: NamedType = {
+          ...contentByLocation.query?.node,
           name: `${contentByLocation.name}Query`,
         };
+
         contentByLocationArray.query.push(query);
+        this.openApiDocComponentBuilder.addComponent({
+          ...contentByLocation.query.node,
+          name: `${contentByLocation.name}Query`,
+        });
       }
     }
 
@@ -228,7 +259,7 @@ export class OpenApiDocPathBuilder {
 
   getContentRequest(
     decorators: Record<string, DecoratorMetadata> | undefined,
-    bodyArray: Array<ClassPropertyMetadata | InterfacePropertyMetadata>
+    bodyArray: NamedType[]
   ): {
     request: RequestBodyObject | undefined;
     typeNameUsed: string[];
@@ -302,15 +333,31 @@ export class OpenApiDocPathBuilder {
       ?.split('|')
       .map((value) => value.trim());
 
+    const responseTypeSplitWithoutNative = (responseTypeSplit ?? []).filter(
+      (value) =>
+        !['undefined', 'void', 'string', 'number', 'boolean'].includes(value)
+    );
+
+    const schema: SchemaObject | ReferenceObject =
+      responseTypeSplitWithoutNative.length > 1
+        ? {
+            anyOf: responseTypeSplitWithoutNative.map((value) => ({
+              $ref: `#/components/schemas/${value}`,
+            })),
+          }
+        : responseTypeSplitWithoutNative.length === 1
+          ? {
+              $ref: `#/components/schemas/${responseTypeSplitWithoutNative[0]}`,
+            }
+          : {};
+
     return {
       responses: {
         [responseCode]: {
           description: decorators?.response?.comment,
           content: {
             [decorators.content.comment]: {
-              schema: {
-                $ref: `#/components/schemas/${decorators.response.type?.toString()}`,
-              },
+              schema,
             },
           },
         },
