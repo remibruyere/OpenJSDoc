@@ -127,6 +127,30 @@ export class TypeParser {
         },
         required: true,
       };
+    } else if (propertyType.flags === TypeFlags.Unknown) {
+      return {
+        node: {
+          type: 'any',
+        },
+        required: true,
+      };
+    } else if (
+      [TypeFlags.TypeParameter, TypeFlags.Index].includes(propertyType.flags)
+    ) {
+      return {
+        node: {
+          type: 'any',
+        },
+        required: true,
+      };
+    } else if ([TypeFlags.NonPrimitive].includes(propertyType.flags)) {
+      return {
+        node: this.processObjectProperty({
+          type: propertyType,
+          level: level + 1,
+        }),
+        required: true,
+      };
     } else {
       console.log(new Error(`Unsupported flag ${propertyType.flags}`));
       console.log(propertyType);

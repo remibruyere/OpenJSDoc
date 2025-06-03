@@ -51,16 +51,19 @@ export class OpenApiDocPathBuilder {
       globalMetadata
     );
 
-    if (contentByLocation === undefined) {
-      throw new Error(
-        `Not request type found for entry point ${entryPointFunction}`
-      );
-    }
+    // if (contentByLocation === undefined) {
+    //   console.log(entryPointFunction);
+    //   console.log(pathConfiguration);
+    //   console.log(globalMetadata);
+    //   throw new Error(
+    //     `Not request type found for entry point ${entryPointFunction}`
+    //   );
+    // }
 
     const { request, typeNameUsed: typeNameRequestUsed } =
       this.getContentRequest(
         entryPointMetadata?.decorators,
-        contentByLocation.body
+        contentByLocation?.body ?? []
       );
 
     const { responses, typeNameUsed: typeNameResponseUsed } = this.getResponse(
@@ -74,9 +77,9 @@ export class OpenApiDocPathBuilder {
         tags,
         description: entryPointMetadata?.comment,
         parameters: [
-          ...this.getParameters(contentByLocation.query),
-          ...this.getParameters(contentByLocation.headers),
-          ...this.getParameters(contentByLocation.path),
+          ...this.getParameters(contentByLocation?.query ?? []),
+          ...this.getParameters(contentByLocation?.headers ?? []),
+          ...this.getParameters(contentByLocation?.path ?? []),
         ],
         requestBody: request,
         responses: {
