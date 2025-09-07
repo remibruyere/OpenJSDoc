@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/index.js",
+  "bin": {
+    "generate-openapi": "dist/bin/cli.js"
+  },
   "scripts": {
+    "build": "tsc",
     "test": "vitest --passWithNoTests --project=unit",
-    "start": "ts-node src/index.ts",
     "docs": "jsdoc -c jsdoc.json"
   },
   "dependencies": {

@@ -11,27 +11,30 @@ export class OpenApiDocBuilder {
 
   constructor(doc?: OpenAPIObject) {
     this.openApiBuilder = OpenApiBuilder.create(
-      doc ?? {
-        openapi: '3.1.0',
-        info: {
-          title: 'Default title',
-          version: '1.0.0',
+      Object.assign(
+        {
+          openapi: '3.1.0',
+          info: {
+            title: 'Default title',
+            version: '1.0.0',
+          },
+          paths: {},
+          components: {
+            schemas: {},
+            responses: {},
+            parameters: {},
+            examples: {},
+            requestBodies: {},
+            headers: {},
+            securitySchemes: {},
+            links: {},
+            callbacks: {},
+          },
+          tags: [],
+          servers: [],
         },
-        paths: {},
-        components: {
-          schemas: {},
-          responses: {},
-          parameters: {},
-          examples: {},
-          requestBodies: {},
-          headers: {},
-          securitySchemes: {},
-          links: {},
-          callbacks: {},
-        },
-        tags: [],
-        servers: [],
-      }
+        doc
+      )
     );
     this.openApiComponentBuilder = new OpenApiDocComponentBuilder(
       this.openApiBuilder

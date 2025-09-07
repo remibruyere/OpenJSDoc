@@ -2,16 +2,15 @@ import ts from 'typescript';
 import { type RouterConfiguration } from './types/router-configuration';
 
 export class RouterVisitor {
+  private readonly basePath: string;
   private readonly routerFindRegex: RegExp;
   private readonly tagRegex: RegExp;
   private readonly basePathRegex: RegExp;
   private readonly routerControllerRegex: RegExp;
-  routerConfigurationList: RouterConfiguration[];
+  readonly routerConfigurationList: RouterConfiguration[];
 
-  constructor(
-    private readonly program: ts.Program,
-    private readonly checker: ts.TypeChecker
-  ) {
+  constructor(basePath: string) {
+    this.basePath = basePath;
     this.routerFindRegex = /.*router\.ts/;
     this.tagRegex = /export const (?<tagName>.*)Router/g;
     this.basePathRegex =
@@ -22,7 +21,10 @@ export class RouterVisitor {
   }
 
   isRouterSourceFile(sourceFilePath: string): boolean {
-    return sourceFilePath.match(this.routerFindRegex) !== null;
+    return (
+      sourceFilePath.startsWith(this.basePath) &&
+      sourceFilePath.match(this.routerFindRegex) !== null
+    );
   }
 
   visit(node: ts.Node): void {

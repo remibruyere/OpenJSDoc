@@ -2,52 +2,67 @@ import { OpenApiDocBuilder } from './openApiDoc/builder';
 import { OpenJsDoc } from './open-js-doc';
 import { OpenApiDocWriter } from './openApiDoc/writer';
 
-function main(): void {
-  // const openJsDoc = new OpenJsDoc(
-  //   './fixtures/interface-advanced/tsconfig.json'
-  // );
-  // const openJsDoc = new OpenJsDoc('./fixtures/arrow-function/tsconfig.json');
-  // const openJsDoc = new OpenJsDoc('./tests/tsconfig.json');
-  const openJsDoc = new OpenJsDoc(
-    '/Users/remibruyere/Documents/easy-pro/projects/fork-cbs/workflow-orchestrator-ledger/tsconfig.json'
-  );
+export function main(configPath: string): void {
+  const openJsDoc = new OpenJsDoc(configPath);
 
   openJsDoc.computeProject();
 
   // console.log(JSON.stringify(openJsDoc.getSourceFilesMetadata(), null, 2));
   // console.log(JSON.stringify(openJsDoc.getRouterConfigurationList(), null, 2));
 
-  const openApiDocBuilder = new OpenApiDocBuilder({
-    openapi: '3.1.0',
-    info: {
-      title: 'Test project',
-      version: '1.0.0',
-    },
-  });
+  openJsDoc.getServerConfigurations().forEach((serverConfig) => {
+    const openApiDocBuilder = new OpenApiDocBuilder(serverConfig.openapiDoc);
 
-  const typeUsedInPath = openJsDoc
-    .getRouterConfigurationList()
-    .map((routerConfiguration) => {
-      return openApiDocBuilder.addEndpointConfiguration(
-        routerConfiguration.entryPointFunction,
-        {
-          path: routerConfiguration.path,
-          method: routerConfiguration.method,
-          tagName: routerConfiguration.tagName,
-        },
-        openJsDoc.getSourceFilesMetadata()
+    const serverRouterConfigurationList =
+      openJsDoc.getServerRouterConfigurationList(serverConfig.serverFile);
+
+    if (serverRouterConfigurationList === undefined) {
+      console.error(
+        `❌ No router visitor configured for server ${serverConfig.serverFile}`
       );
-    });
+      throw new Error(
+        `❌ No router visitor configured for server ${serverConfig.serverFile}`
+      );
+    }
 
-  openApiDocBuilder.addComponentConfiguration(
-    openJsDoc.getSourceFilesMetadata(),
-    typeUsedInPath.flatMap((value) => value.typeNameUsed)
-  );
+    const typeUsedInPath = serverRouterConfigurationList.map(
+      (routerConfiguration) => {
+        return openApiDocBuilder.addEndpointConfiguration(
+          routerConfiguration.entryPointFunction,
+          {
+            path: routerConfiguration.path,
+            method: routerConfiguration.method,
+            tagName: routerConfiguration.tagName,
+          },
+          openJsDoc.getSourceFilesMetadata()
+        );
+      }
+    );
 
-  const openApiDocWriter = new OpenApiDocWriter(openApiDocBuilder);
+    openApiDocBuilder.addComponentConfiguration(
+      openJsDoc.getSourceFilesMetadata(),
+      typeUsedInPath.flatMap((value) => value.typeNameUsed)
+    );
 
-  openApiDocWriter.writeJson('output/openapi.json');
-  openApiDocWriter.writeYaml('output/openapi.yaml');
+    const openApiDocWriter = new OpenApiDocWriter(openApiDocBuilder);
+
+    const output = serverConfig.output;
+    if (output.json === undefined && output.yaml === undefined) {
+      console.warn(
+        `⚠️ No output configuration for ${serverConfig.openapiDoc.info.title} found`
+      );
+    }
+    if (output.json !== undefined) {
+      console.info(
+        `✅ Writing json output for ${serverConfig.openapiDoc.info.title}`
+      );
+      openApiDocWriter.writeJson(output.json);
+    }
+    if (output.yaml !== undefined) {
+      console.info(
+        `✅ Writing yaml output for ${serverConfig.openapiDoc.info.title}`
+      );
+      openApiDocWriter.writeYaml(output.yaml);
+    }
+  });
 }
-
-main();
