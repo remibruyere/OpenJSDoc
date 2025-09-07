@@ -1,14 +1,14 @@
+import fs from 'fs';
+import type { OpenAPIObject } from 'openapi3-ts/oas31';
 import ts from 'typescript';
 import { StaticLanguageServiceHost } from './ast/lib/ts/staticLanguageServiceHost';
-import { SourceFileVisitor } from './source-file-visitor';
 import { type GlobalMetadata } from './ast/types/global-metadata';
 import { RouterVisitor } from './plugins/cbs/router-visitor';
 import { type RouterConfiguration } from './plugins/cbs/types/router-configuration';
-import fs from 'fs';
-import type { OpenAPIObject } from 'openapi3-ts/oas31';
+import { SourceFileVisitor } from './source-file-visitor';
 
 export interface IServerConfiguration {
-  serverFile: string;
+  serverBasePath: string;
   openapiDoc: OpenAPIObject;
   output: {
     json: string | undefined;
@@ -32,7 +32,7 @@ export class OpenJsDoc {
   constructor(readonly configurationFilePath: string) {
     this.configuration = this.getConfiguration(configurationFilePath);
     this.service = ts.createLanguageService(
-      new StaticLanguageServiceHost(this.configuration.projectPath)
+      new StaticLanguageServiceHost(this.configuration.projectPath),
     );
     const program = this.service.getProgram();
     if (program === undefined) {
@@ -45,24 +45,24 @@ export class OpenJsDoc {
     this.serverRouterVisitor = this.getServerConfigurations().reduce(
       (previousValue, currentValue) => {
         return previousValue.set(
-          currentValue.serverFile,
-          new RouterVisitor(currentValue.serverFile)
+          currentValue.serverBasePath,
+          new RouterVisitor(currentValue.serverBasePath),
         );
       },
-      new Map<string, RouterVisitor>()
+      new Map<string, RouterVisitor>(),
     );
   }
 
   getConfiguration(configurationFilePath: string): IConfiguration {
     if (!fs.existsSync(configurationFilePath)) {
       console.error(
-        `❌ Could not find ${configurationFilePath} configuration file`
+        `❌ Could not find ${configurationFilePath} configuration file`,
       );
       process.exit(1);
     }
 
     const configuration: IConfiguration = JSON.parse(
-      fs.readFileSync(configurationFilePath, 'utf-8')
+      fs.readFileSync(configurationFilePath, 'utf-8'),
     );
 
     return {
@@ -72,15 +72,19 @@ export class OpenJsDoc {
   }
 
   computeProject(): void {
-    const serverRouterVisitors = this.serverRouterVisitor.values();
+    let fileNumber = 0;
+    let usedFileNumber = 0;
+    const perfStartAll = performance.now();
     for (const file of this.program.getSourceFiles()) {
+      fileNumber++;
       if (
         !file.isDeclarationFile &&
         !this.program.isSourceFileFromExternalLibrary(file)
       ) {
+        usedFileNumber++;
         ts.forEachChild(file, (node) => {
           this.visitor.visit(node);
-          for (const visitor of serverRouterVisitors) {
+          for (const visitor of this.serverRouterVisitor.values()) {
             if (visitor.isRouterSourceFile(file.fileName)) {
               visitor.visit(node);
             }
@@ -88,6 +92,10 @@ export class OpenJsDoc {
         });
       }
     }
+    const perfEndAll = performance.now();
+    console.info(
+      `⏱️ Checked ${fileNumber} files. ${usedFileNumber} files used. Parsed in ${Math.round(perfEndAll - perfStartAll)}ms`,
+    );
   }
 
   getSourceFilesMetadata(): GlobalMetadata {
@@ -95,7 +103,7 @@ export class OpenJsDoc {
   }
 
   getServerRouterConfigurationList(
-    serverFile: string
+    serverFile: string,
   ): RouterConfiguration[] | undefined {
     return this.serverRouterVisitor.get(serverFile)?.routerConfigurationList;
   }

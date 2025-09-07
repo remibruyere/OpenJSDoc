@@ -13,7 +13,7 @@ import {
 export class TypeParser {
   constructor(
     private readonly program: ts.Program,
-    private readonly checker: ts.TypeChecker
+    private readonly checker: ts.TypeChecker,
   ) {}
 
   getObjectProperty(symbol: ts.Symbol, level = 0): ObjectProperty | undefined {
@@ -22,7 +22,7 @@ export class TypeParser {
     }
     const type = this.checker.getTypeOfSymbolAtLocation(
       symbol,
-      symbol.valueDeclaration
+      symbol.valueDeclaration,
     );
 
     const anyTypeResult = this.processAnyType(type, type.symbol, level + 1);
@@ -38,18 +38,21 @@ export class TypeParser {
   private processAnyType(
     propertyType: ts.Type,
     property: ts.Symbol,
-    level: number
+    level: number,
   ): { node: NodeType | undefined; required: boolean } {
     if (this.checker.isArrayType(propertyType)) {
       return {
         node: this.processArrayType(propertyType, property, level + 1),
         required: true,
       };
-    } else if (propertyType.isIntersection()) {
+    }
+    if (propertyType.isIntersection()) {
       return this.processIntersectionType(propertyType, level + 1);
-    } else if (propertyType.isUnion()) {
-      return this.processUnionType(propertyType, property, level + 1);
-    } else if (propertyType.isNumberLiteral()) {
+    }
+    if (propertyType.isUnion()) {
+      return this.processUnionType(propertyType, level + 1);
+    }
+    if (propertyType.isNumberLiteral()) {
       return {
         node: {
           type: 'number',
@@ -57,7 +60,8 @@ export class TypeParser {
         },
         required: true,
       };
-    } else if (propertyType.isStringLiteral()) {
+    }
+    if (propertyType.isStringLiteral()) {
       return {
         node: {
           type: 'string',
@@ -65,7 +69,8 @@ export class TypeParser {
         },
         required: true,
       };
-    } else if (propertyType.flags === TypeFlags.Boolean) {
+    }
+    if (propertyType.flags === TypeFlags.Boolean) {
       console.log(propertyType);
       return {
         node: {
@@ -73,7 +78,8 @@ export class TypeParser {
         },
         required: true,
       };
-    } else if (propertyType.flags === TypeFlags.BooleanLiteral) {
+    }
+    if (propertyType.flags === TypeFlags.BooleanLiteral) {
       return {
         node: {
           type: 'boolean',
@@ -81,14 +87,16 @@ export class TypeParser {
         },
         required: true,
       };
-    } else if (propertyType.flags === TypeFlags.Number) {
+    }
+    if (propertyType.flags === TypeFlags.Number) {
       return {
         node: {
           type: 'number',
         },
         required: true,
       };
-    } else if (
+    }
+    if (
       propertyType.flags === TypeFlags.String ||
       propertyType.flags === TypeFlags.TemplateLiteral
     ) {
@@ -98,62 +106,15 @@ export class TypeParser {
         },
         required: true,
       };
-    } else if (
+    }
+    if (
       [TypeFlags.Undefined, TypeFlags.Void, TypeFlags.VoidLike].includes(
-        propertyType.flags
+        propertyType.flags,
       )
     ) {
       return { node: undefined, required: false };
-    } else if ([TypeFlags.Object].includes(propertyType.flags)) {
-      return {
-        node: this.processObjectProperty({
-          type: propertyType,
-          level: level + 1,
-        }),
-        required: true,
-      };
-    } else if (
-      [TypeFlags.TypeParameter, TypeFlags.Conditional].includes(
-        propertyType.flags
-      )
-    ) {
-      return { node: undefined, required: true };
-    } else if (propertyType.flags === TypeFlags.Null) {
-      return { node: { type: 'null' }, required: true };
-    } else if (propertyType.flags === TypeFlags.Any) {
-      return {
-        node: {
-          type: 'any',
-        },
-        required: true,
-      };
-    } else if (propertyType.flags === TypeFlags.Unknown) {
-      return {
-        node: {
-          type: 'any',
-        },
-        required: true,
-      };
-    } else if (
-      [TypeFlags.TypeParameter, TypeFlags.Index].includes(propertyType.flags)
-    ) {
-      return {
-        node: {
-          type: 'any',
-        },
-        required: true,
-      };
-    } else if ([TypeFlags.NonPrimitive].includes(propertyType.flags)) {
-      return {
-        node: this.processObjectProperty({
-          type: propertyType,
-          level: level + 1,
-        }),
-        required: true,
-      };
-    } else {
-      console.log(new Error(`Unsupported flag ${propertyType.flags}`));
-      console.log(propertyType);
+    }
+    if ([TypeFlags.Object].includes(propertyType.flags)) {
       return {
         node: this.processObjectProperty({
           type: propertyType,
@@ -162,6 +123,60 @@ export class TypeParser {
         required: true,
       };
     }
+    if (
+      [TypeFlags.TypeParameter, TypeFlags.Conditional].includes(
+        propertyType.flags,
+      )
+    ) {
+      return { node: undefined, required: true };
+    }
+    if (propertyType.flags === TypeFlags.Null) {
+      return { node: { type: 'null' }, required: true };
+    }
+    if (propertyType.flags === TypeFlags.Any) {
+      return {
+        node: {
+          type: 'any',
+        },
+        required: true,
+      };
+    }
+    if (propertyType.flags === TypeFlags.Unknown) {
+      return {
+        node: {
+          type: 'any',
+        },
+        required: true,
+      };
+    }
+    if (
+      [TypeFlags.TypeParameter, TypeFlags.Index].includes(propertyType.flags)
+    ) {
+      return {
+        node: {
+          type: 'any',
+        },
+        required: true,
+      };
+    }
+    if ([TypeFlags.NonPrimitive].includes(propertyType.flags)) {
+      return {
+        node: this.processObjectProperty({
+          type: propertyType,
+          level: level + 1,
+        }),
+        required: true,
+      };
+    }
+    console.log(new Error(`Unsupported flag ${propertyType.flags}`));
+    console.log(propertyType);
+    return {
+      node: this.processObjectProperty({
+        type: propertyType,
+        level: level + 1,
+      }),
+      required: true,
+    };
   }
 
   processObjectProperty({
@@ -191,7 +206,7 @@ export class TypeParser {
       }
       const propertyType = this.checker.getTypeOfSymbolAtLocation(
         property,
-        property.valueDeclaration
+        property.valueDeclaration,
       );
       const propertySymbol = propertyType.getSymbol();
 
@@ -207,7 +222,7 @@ export class TypeParser {
     Object.entries(objectType.properties).forEach((value) => {
       if (value[1].node.type === 'or') {
         const booleans = value[1].node.or.filter(
-          (orProp) => orProp.type === 'boolean'
+          (orProp) => orProp.type === 'boolean',
         );
         if (booleans.length === 2) {
           if (value[1].node.or.length === 2) {
@@ -231,7 +246,7 @@ export class TypeParser {
   private processArrayType(
     propertyType: ts.Type,
     property: ts.Symbol,
-    level: number
+    level: number,
   ): ArrayType {
     const arrayElementType = this.getArrayItemType(propertyType);
     if (
@@ -244,26 +259,24 @@ export class TypeParser {
         elementType: this.processAnyType(
           arrayElementType,
           arrayElementType.symbol,
-          level + 1
+          level + 1,
         ).node ?? {
           type: 'null',
         },
       };
-    } else {
-      return {
-        name: property.name,
-        type: 'array',
-        elementType: {
-          type: 'any',
-        },
-      };
     }
+    return {
+      name: property.name,
+      type: 'array',
+      elementType: {
+        type: 'any',
+      },
+    };
   }
 
   private processUnionType(
     propertyType: ts.UnionOrIntersectionType,
-    property: ts.Symbol,
-    level: number
+    level: number,
   ): { node: NodeType | undefined; required: boolean } {
     const nodeType: OrType = {
       type: 'or',
@@ -292,7 +305,7 @@ export class TypeParser {
 
   private processIntersectionType(
     propertyType: ts.UnionOrIntersectionType,
-    level: number
+    level: number,
   ): { node: NodeType | undefined; required: boolean } {
     const nodeType: AndType = {
       type: 'and',

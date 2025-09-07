@@ -8,29 +8,25 @@
   },
   "scripts": {
     "build": "tsc",
+    "lint": "biome check",
+    "lint:tsc": "tsc --noEmit",
+    "lint:fix": "biome check --fix",
     "test": "vitest --passWithNoTests --project=unit",
     "docs": "jsdoc -c jsdoc.json"
   },
   "dependencies": {
-    "openapi3-ts": "4.4.0",
-    "ts-node": "^10.9.2",
-    "tsutils": "^3.21.0",
-    "vitest": "^3.1.1"
+    "openapi3-ts": "4.5.0",
+    "tsutils": "3.21.0"
   },
   "devDependencies": {
-    "@types/node": "22.14.1",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-config-standard-with-typescript": "^43.0.1",
-    "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-n": "^16.6.2",
-    "eslint-plugin-promise": "^6.1.1",
-    "neverthrow": "^8.2.0",
-    "prettier": "3.2.5",
-    "typescript": "5.8.3",
+    "@biomejs/biome": "2.2.3",
+    "@types/node": "24.3.1",
+    "neverthrow": "8.2.0",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.2",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.51.0",
-    "zod": "^3.24.2"
+    "vite": "7.1.4",
+    "vitest": "3.2.4",
+    "zod": "4.1.5"
   }
 }

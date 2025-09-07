@@ -36,7 +36,7 @@ export class RouterVisitor {
       const tagMatch = this.tagRegex.exec(routerCode);
       const basePathMatch = this.basePathRegex.exec(routerCode);
       const routerControllerMatches = routerCode.matchAll(
-        this.routerControllerRegex
+        this.routerControllerRegex,
       );
 
       const tagName = tagMatch?.groups?.tagName;
@@ -46,7 +46,7 @@ export class RouterVisitor {
         const method = routerControllerMatch.groups?.method;
         const path = routerControllerMatch.groups?.path.replace(
           `\${basePath}`,
-          basePath ?? ''
+          basePath ?? '',
         );
         const handler = routerControllerMatch.groups?.handler;
 

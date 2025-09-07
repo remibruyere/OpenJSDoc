@@ -1,13 +1,13 @@
 import type { HttpResponse } from 'uWebSockets.js';
+import { ApiError } from 'errors/api-error';
+import { InternalError } from 'errors/internal-error';
 import {
   ControllerRawResponse,
   ControllerTypedResponse,
 } from '../interface/controller';
-import { ApiError } from 'errors/api-error';
-import { InternalError } from 'errors/internal-error';
 
 export function convertToOutputError(
-  responseError: Error | unknown
+  responseError: Error | unknown,
 ): ControllerRawResponse {
   if (responseError instanceof ApiError) {
     return {
@@ -16,7 +16,8 @@ export function convertToOutputError(
       }),
       statusCode: responseError.statusCode,
     } satisfies ControllerRawResponse;
-  } else if (responseError instanceof Error) {
+  }
+  if (responseError instanceof Error) {
     return {
       body: JSON.stringify({
         error: {
@@ -28,20 +29,19 @@ export function convertToOutputError(
       }),
       statusCode: 500,
     } satisfies ControllerRawResponse;
-  } else {
-    const error = new InternalError(500, 'An undefined error has been thrown');
-    return {
-      body: JSON.stringify({
-        error: {
-          statusCode: 500,
-          name: error.name,
-          message: error.message,
-          errorLevel: 'ALERT',
-        },
-      }),
-      statusCode: 500,
-    } satisfies ControllerRawResponse;
   }
+  const error = new InternalError(500, 'An undefined error has been thrown');
+  return {
+    body: JSON.stringify({
+      error: {
+        statusCode: 500,
+        name: error.name,
+        message: error.message,
+        errorLevel: 'ALERT',
+      },
+    }),
+    statusCode: 500,
+  } satisfies ControllerRawResponse;
 }
 
 export function handleResponse(
@@ -49,7 +49,7 @@ export function handleResponse(
   data:
     | ControllerRawResponse
     | ControllerTypedResponse<Record<string, unknown> | void>
-    | Error
+    | Error,
 ) {
   if (data instanceof Error) {
     const error = convertToOutputError(data);

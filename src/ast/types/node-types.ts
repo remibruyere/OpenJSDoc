@@ -14,8 +14,6 @@ export interface LocationOffset {
   end?: number;
 }
 
-export type Location = LocationWithLineColumn | LocationOffset;
-
 export interface CoreTypeAnnotations {
   name?: string;
   title?: string;
@@ -52,8 +50,6 @@ export interface TypeMap {
   tuple: unknown[];
 }
 
-export type Types = keyof TypeMap;
-
 export interface Const<T> {
   const?: T;
 }
@@ -80,13 +76,6 @@ export type StringType = NodePrimitiveType<'string'> & CoreTypeAnnotations;
 export type NumberType = NodePrimitiveType<'number'> & CoreTypeAnnotations;
 export type IntegerType = NodePrimitiveType<'integer'> & CoreTypeAnnotations;
 export type BooleanType = NodePrimitiveType<'boolean'> & CoreTypeAnnotations;
-
-export type PrimitiveType =
-  | NullType
-  | StringType
-  | NumberType
-  | IntegerType
-  | BooleanType;
 
 export interface NodeRefCoreType {
   type: 'ref';
@@ -151,25 +140,12 @@ export type NodeType = NodeTypeMap[keyof NodeTypeMap];
 
 export type NamedType<T extends NodeType = NodeType> = T & { name: string };
 
-export type NodeWithConstEnum =
-  | AnyType
-  | StringType
-  | NumberType
-  | IntegerType
-  | BooleanType
-  | ObjectType
-  | ArrayType
-  | TupleType
-  | RefType;
-
-export type NodePath = Array<string | number>;
-
 export interface NodeDocument<
   Version extends number = 1,
   T extends NodeType = NodeType,
 > {
   version: Version;
-  types: Array<NamedType<T>>;
+  types: NamedType<T>[];
 }
 
 export function isObjectType(objectType: NodeType): objectType is ObjectType {

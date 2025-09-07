@@ -1,12 +1,12 @@
-import { getTextOfJSDocComment } from 'typescript';
-import type ts from 'typescript';
 import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
-import { type FunctionMetadata } from './types/functionMetadata';
+import type ts from 'typescript';
+import { getTextOfJSDocComment } from 'typescript';
 import { getTagInformation } from '../../lib/tag';
 import { type DecoratorMetadata } from '../../types/decorator-metadata';
+import { type FunctionMetadata } from './types/functionMetadata';
 
 export function parseFunction(
-  functionDeclaration: ts.FunctionDeclaration
+  functionDeclaration: ts.FunctionDeclaration,
 ): FunctionMetadata | undefined {
   const functionName = functionDeclaration.name?.getText();
   if (functionName === undefined || functionName.length === 0) {
@@ -21,7 +21,7 @@ export function parseFunction(
 }
 
 function getFunctionComment(
-  functionDeclaration: ts.FunctionDeclaration
+  functionDeclaration: ts.FunctionDeclaration,
 ): string {
   if (canHaveJsDoc(functionDeclaration)) {
     const jsDocs: ts.JSDoc[] = getJsDoc(functionDeclaration);
@@ -33,7 +33,7 @@ function getFunctionComment(
 }
 
 function getFunctionDecorator(
-  functionDeclaration: ts.FunctionDeclaration
+  functionDeclaration: ts.FunctionDeclaration,
 ): Record<string, DecoratorMetadata> {
   const decorators: Record<string, DecoratorMetadata> = {};
 

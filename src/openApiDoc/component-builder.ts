@@ -13,14 +13,14 @@ export class OpenApiDocComponentBuilder {
 
   findComponent(
     globalMetadata: GlobalMetadata,
-    typeName: string
+    typeName: string,
   ): Array<InterfaceMetadata | undefined> {
     return [
       // ...globalMetadata.classMetadata.filter(
       //   (classMetadata) => classMetadata.name === typeName
       // ),
       ...globalMetadata.interfaceMetadata.filter(
-        (interfaceMetadata) => interfaceMetadata.name === typeName
+        (interfaceMetadata) => interfaceMetadata.name === typeName,
       ),
     ];
   }
@@ -38,16 +38,16 @@ export class OpenApiDocComponentBuilder {
                 ...previousValue,
                 [currentValue[0]]:
                   OpenApiDocComponentNodeTypeBuilder.convertNodeTypeToSchemaObject(
-                    currentValue[1].node
+                    currentValue[1].node,
                   ),
               };
             },
-            {}
+            {},
           )
         : {},
       required: isObjectType(metadata)
         ? Object.keys(metadata.properties).filter(
-            (prop) => metadata.properties[prop].required
+            (prop) => metadata.properties[prop].required,
           )
         : undefined,
     });

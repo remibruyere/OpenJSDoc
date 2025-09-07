@@ -1,6 +1,6 @@
-import { Controller, ControllerTypedResponse } from '../interface/controller';
 import { IAccountFetchApiRequestDto } from '../interface/account-fetch-request.dto.interface';
 import { IAccountFetchApiResponseDto } from '../interface/account-fetch-response.dto.interface';
+import { Controller, ControllerTypedResponse } from '../interface/controller';
 
 /**
  * @summary Handler for test endpoint
@@ -16,9 +16,9 @@ export const accountFetchHandler: Controller<
   IAccountFetchApiRequestDto,
   ControllerTypedResponse<IAccountFetchApiResponseDto>
 > = async (
-  event: IAccountFetchApiRequestDto
+  event: IAccountFetchApiRequestDto,
 ): Promise<ControllerTypedResponse<IAccountFetchApiResponseDto>> => {
-  return {
+  return await {
     statusCode: 200,
     body: {
       data: {

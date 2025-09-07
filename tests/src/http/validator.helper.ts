@@ -1,7 +1,7 @@
 import type { ApiError } from 'errors/api-error';
 import { ValidationError } from 'errors/validation-error';
-import { err, ok } from 'neverthrow';
 import type { Result } from 'neverthrow';
+import { err, ok } from 'neverthrow';
 import type { z } from 'zod';
 import { IApiRequest, IApiRequestUnverified } from '../interface/api-request';
 

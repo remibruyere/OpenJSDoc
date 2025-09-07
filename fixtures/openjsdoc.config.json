@@ -2,7 +2,7 @@
   "projectPath": "./tsconfig.json",
   "serverConfigurations": [
     {
-      "serverFile": "./src/app/server.ts",
+      "serverBasePath": "src",
       "openapiDoc": {
         "openapi": "3.1.0",
         "info": {

@@ -1,19 +1,19 @@
-import ts, { getTextOfJSDocComment, SignatureKind } from 'typescript';
 import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
+import ts, { getTextOfJSDocComment } from 'typescript';
 import { getTagInformation } from '../../lib/tag';
 import { type DecoratorMetadata } from '../../types/decorator-metadata';
 import { type FunctionMetadata } from './types/functionMetadata';
-import { array } from 'zod';
 
 /**
  * Parse arrow function and return metadata
  * Use parent since arrow function will be stored in it and all information
  * is attached to the parent
  * @param arrowFunction
+ * @param checker
  */
 export function parseArrowFunction(
   arrowFunction: ts.ArrowFunction,
-  checker: ts.TypeChecker
+  checker: ts.TypeChecker,
 ): FunctionMetadata | undefined {
   const functionName = getArrowFunctionVariableName(arrowFunction);
   if (functionName === undefined || functionName.length === 0) {
@@ -34,7 +34,7 @@ export function parseArrowFunction(
  * @param arrowFunction
  */
 function getArrowFunctionVariableName(
-  arrowFunction: ts.ArrowFunction
+  arrowFunction: ts.ArrowFunction,
 ): string | undefined {
   if (ts.isVariableDeclaration(arrowFunction.parent)) {
     return arrowFunction.parent.name?.getText();
@@ -60,7 +60,7 @@ function getArrowFunctionComment(arrowFunction: ts.ArrowFunction): string {
 
 function getArrowFunctionResponseDecorator(
   arrowFunction: ts.ArrowFunction,
-  checker: ts.TypeChecker
+  checker: ts.TypeChecker,
 ): DecoratorMetadata {
   if (ts.isVariableDeclaration(arrowFunction.parent)) {
     const type = checker.getTypeAtLocation(arrowFunction.parent);
@@ -107,7 +107,7 @@ function getArrowFunctionResponseDecorator(
 }
 
 function getArrowFunctionRequestDecorator(
-  arrowFunction: ts.ArrowFunction
+  arrowFunction: ts.ArrowFunction,
 ): DecoratorMetadata {
   return {
     type: arrowFunction.parameters[0]?.type?.getText(),
@@ -124,7 +124,7 @@ function getArrowFunctionRequestDecorator(
  */
 function getArrowFunctionDecorator(
   arrowFunction: ts.ArrowFunction,
-  checker: ts.TypeChecker
+  checker: ts.TypeChecker,
 ): Record<string, DecoratorMetadata> {
   const decorators: Record<string, DecoratorMetadata> = {};
 
@@ -132,7 +132,7 @@ function getArrowFunctionDecorator(
 
   decorators.response = getArrowFunctionResponseDecorator(
     arrowFunction,
-    checker
+    checker,
   );
 
   // Set default content as application/json

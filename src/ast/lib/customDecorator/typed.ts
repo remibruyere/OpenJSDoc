@@ -1,5 +1,5 @@
-import { getTextOfJSDocComment } from 'typescript';
 import type ts from 'typescript';
+import { getTextOfJSDocComment } from 'typescript';
 
 const customTagRegex = /^\s*(\d\d\d)?\s*{([\s\S]*?)}\s*([\s\S]*)$/;
 
@@ -9,7 +9,7 @@ const customTagRegex = /^\s*(\d\d\d)?\s*{([\s\S]*?)}\s*([\s\S]*)$/;
  * @param tag
  */
 export function parseCustomTagTypedResponseCode(
-  tag: ts.JSDocTag
+  tag: ts.JSDocTag,
 ): number | undefined {
   const comment = getTextOfJSDocComment(tag.comment);
 
@@ -28,7 +28,7 @@ export function parseCustomTagTypedResponseCode(
  * @param tag
  */
 export function parseCustomTagTypedType(
-  tag: ts.JSDocTag
+  tag: ts.JSDocTag,
 ): string | string[] | undefined {
   const comment = getTextOfJSDocComment(tag.comment);
 

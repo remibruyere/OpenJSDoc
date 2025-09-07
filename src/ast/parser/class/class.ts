@@ -1,12 +1,11 @@
-import ts from 'typescript';
-import { parseClassProperty } from './classProperty';
-import { type ClassElement, getTextOfJSDocComment } from 'typescript';
 import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
-import { type ClassPropertyMetadata } from './types/classPropertyMetadata';
+import ts, { type ClassElement, getTextOfJSDocComment } from 'typescript';
+import { parseClassProperty } from './classProperty';
 import { type ClassMetadata } from './types/classMetadata';
+import { type ClassPropertyMetadata } from './types/classPropertyMetadata';
 
 export function parseClass(
-  classDeclaration: ts.ClassDeclaration
+  classDeclaration: ts.ClassDeclaration,
 ): ClassMetadata {
   return {
     name: classDeclaration.name?.getText() ?? '',
@@ -16,7 +15,7 @@ export function parseClass(
 }
 
 function parseClassMembers(
-  members: ts.NodeArray<ClassElement>
+  members: ts.NodeArray<ClassElement>,
 ): ClassPropertyMetadata[] {
   const properties: ClassPropertyMetadata[] = [];
   members.forEach((member) => {

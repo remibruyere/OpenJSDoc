@@ -1,4 +1,5 @@
 import type { HttpRequest, HttpResponse } from 'uWebSockets.js';
+import { InternalError } from 'errors/internal-error';
 import type { z } from 'zod';
 import { IApiRequest, IApiRequestUnverified } from '../interface/api-request';
 import {
@@ -7,9 +8,8 @@ import {
   ControllerTypedResponse,
 } from '../interface/controller';
 import { readBody } from './body.helper';
-import { safeValidateSchema } from './validator.helper';
 import { convertToOutputError, handleResponse } from './handle-response.helper';
-import { InternalError } from 'errors/internal-error';
+import { safeValidateSchema } from './validator.helper';
 
 export function controller<
   Req extends IApiRequest<unknown, unknown, unknown>,
@@ -18,9 +18,9 @@ export function controller<
     | ControllerTypedResponse<Record<string, unknown> | void>,
 >(
   handler: Controller<Req, Res>,
-  requestSchema: z.ZodType<Req>
+  requestSchema: z.ZodType<Req>,
 ): (
-  basePath: `/${string}`
+  basePath: `/${string}`,
 ) => (res: HttpResponse, req: HttpRequest) => Promise<void> {
   return (basePath: `/${string}`) => {
     return async (res: HttpResponse, req: HttpRequest): Promise<void> => {
@@ -42,7 +42,7 @@ export function controller<
             ? await readBody(
                 res,
                 (message) =>
-                  new InternalError(500, `Error during body read: ${message}`)
+                  new InternalError(500, `Error during body read: ${message}`),
               )
             : {},
         };
@@ -73,7 +73,7 @@ export function controller<
 
 function getParameters(
   basePath: `/${string}`,
-  req: HttpRequest
+  req: HttpRequest,
 ): Record<string, string> {
   return basePath
     .split('/')

@@ -6,11 +6,11 @@ import {
   type ResponsesObject,
   type SchemaObject,
 } from 'openapi3-ts/oas31';
-import { type GlobalMetadata } from '../ast/types/global-metadata';
-import { type PathConfiguration } from '../ast/types/path-configuration';
 import type { DecoratorMetadata } from '../ast/types/decorator-metadata';
-import { type OpenApiDocComponentBuilder } from './component-builder';
+import { type GlobalMetadata } from '../ast/types/global-metadata';
 import { type NamedType, type ObjectProperty } from '../ast/types/node-types';
+import { type PathConfiguration } from '../ast/types/path-configuration';
+import { type OpenApiDocComponentBuilder } from './component-builder';
 import { OpenApiDocComponentNodeTypeBuilder } from './component-node-type-builder';
 
 export class OpenApiDocPathBuilder {
@@ -19,7 +19,7 @@ export class OpenApiDocPathBuilder {
 
   constructor(
     openApiBuilder: OpenApiBuilder,
-    openApiDocComponentBuilder: OpenApiDocComponentBuilder
+    openApiDocComponentBuilder: OpenApiDocComponentBuilder,
   ) {
     this.openApiBuilder = openApiBuilder;
     this.openApiDocComponentBuilder = openApiDocComponentBuilder;
@@ -37,7 +37,7 @@ export class OpenApiDocPathBuilder {
     typeNameUsed: string[];
   } {
     const entryPointMetadata = globalMetadata.functionMetadata.find(
-      (value) => value.name === entryPointFunction
+      (value) => value.name === entryPointFunction,
     );
 
     const tags = [pathConfiguration.tagName];
@@ -48,7 +48,7 @@ export class OpenApiDocPathBuilder {
 
     const contentByLocation = this.getRequestContentByLocation(
       entryPointMetadata?.decorators,
-      globalMetadata
+      globalMetadata,
     );
 
     // if (contentByLocation === undefined) {
@@ -63,11 +63,11 @@ export class OpenApiDocPathBuilder {
     const { request, typeNameUsed: typeNameRequestUsed } =
       this.getContentRequest(
         entryPointMetadata?.decorators,
-        contentByLocation?.body ?? []
+        contentByLocation?.body ?? [],
       );
 
     const { responses, typeNameUsed: typeNameResponseUsed } = this.getResponse(
-      entryPointMetadata?.decorators
+      entryPointMetadata?.decorators,
     );
 
     this.openApiBuilder.addPath(pathConfiguration.path, {
@@ -104,18 +104,18 @@ export class OpenApiDocPathBuilder {
               in: 'query',
               schema:
                 OpenApiDocComponentNodeTypeBuilder.convertNodeTypeToSchemaObject(
-                  prop[1].node
+                  prop[1].node,
                 ),
               required: prop[1].required,
-            }) satisfies ParameterObject
-        )
+            }) satisfies ParameterObject,
+        ),
       )
       .filter(Boolean) as ParameterObject[];
   }
 
   splitRequestContentByLocation(
     globalMetadata: GlobalMetadata,
-    typeName: string
+    typeName: string,
   ):
     | {
         name: string;
@@ -129,7 +129,7 @@ export class OpenApiDocPathBuilder {
     // definition with same name but ignored for the moment
     const matchComponents = this.openApiDocComponentBuilder.findComponent(
       globalMetadata,
-      typeName
+      typeName,
     )[0];
 
     if (matchComponents === undefined) {
@@ -138,30 +138,30 @@ export class OpenApiDocPathBuilder {
 
     if (matchComponents.type !== 'object') {
       throw new Error(
-        `Request type ${typeName} is not an object. You need to provide an object as input request handler to use this lib`
+        `Request type ${typeName} is not an object. You need to provide an object as input request handler to use this lib`,
       );
     }
 
     return {
       name: matchComponents.name,
       body: Object.entries(matchComponents.properties).filter(
-        (prop) => prop[0] === 'body'
+        (prop) => prop[0] === 'body',
       )[0]?.[1],
       headers: Object.entries(matchComponents.properties).filter(
-        (prop) => prop[0] === 'headers'
+        (prop) => prop[0] === 'headers',
       )[0]?.[1],
       path: Object.entries(matchComponents.properties).filter(
-        (prop) => prop[0] === 'pathParameters'
+        (prop) => prop[0] === 'pathParameters',
       )[0]?.[1],
       query: Object.entries(matchComponents.properties).filter(
-        (prop) => prop[0] === 'queryStringParameters'
+        (prop) => prop[0] === 'queryStringParameters',
       )[0]?.[1],
     };
   }
 
   getRequestContentByLocation(
     decorators: Record<string, DecoratorMetadata> | undefined,
-    globalMetadata: GlobalMetadata
+    globalMetadata: GlobalMetadata,
   ):
     | {
         body: NamedType[];
@@ -198,7 +198,7 @@ export class OpenApiDocPathBuilder {
     for (const requestTypeSplitElement of requestTypeSplit) {
       const contentByLocation = this.splitRequestContentByLocation(
         globalMetadata,
-        requestTypeSplitElement
+        requestTypeSplitElement,
       );
       if (contentByLocation === undefined) {
         continue;
@@ -262,7 +262,7 @@ export class OpenApiDocPathBuilder {
 
   getContentRequest(
     decorators: Record<string, DecoratorMetadata> | undefined,
-    bodyArray: NamedType[]
+    bodyArray: NamedType[],
   ): {
     request: RequestBodyObject | undefined;
     typeNameUsed: string[];
@@ -277,7 +277,8 @@ export class OpenApiDocPathBuilder {
         },
         typeNameUsed: [],
       };
-    } else if (bodyArray.length === 1) {
+    }
+    if (bodyArray.length === 1) {
       schema = {
         $ref: `#/components/schemas/${bodyArray[0].name}`,
         description: bodyArray[0].comment,
@@ -306,8 +307,8 @@ export class OpenApiDocPathBuilder {
           .filter(
             (value) =>
               !['undefined', 'void', 'string', 'number', 'boolean'].includes(
-                value
-              )
+                value,
+              ),
           ),
       ],
     };
@@ -338,7 +339,7 @@ export class OpenApiDocPathBuilder {
 
     const responseTypeSplitWithoutNative = (responseTypeSplit ?? []).filter(
       (value) =>
-        !['undefined', 'void', 'string', 'number', 'boolean'].includes(value)
+        !['undefined', 'void', 'string', 'number', 'boolean'].includes(value),
     );
 
     const schema: SchemaObject | ReferenceObject =
@@ -369,8 +370,8 @@ export class OpenApiDocPathBuilder {
         ...(responseTypeSplit ?? []).filter(
           (value) =>
             !['undefined', 'void', 'string', 'number', 'boolean'].includes(
-              value
-            )
+              value,
+            ),
         ),
       ],
     };

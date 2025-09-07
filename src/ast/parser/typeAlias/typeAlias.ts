@@ -1,21 +1,21 @@
-import ts from 'typescript';
 import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
+import ts from 'typescript';
+import { TypeParser } from '../../lib/type/type-parser';
 import { type InterfaceMetadata } from '../interface/types/interfaceMetadata';
 import { type InterfacePropertyMetadata } from '../interface/types/interfacePropertyMetadata';
-import { TypeParser } from '../../lib/type/type-parser';
 
 export class TypeAliasParser {
   typeParser: TypeParser;
 
   constructor(
-    private readonly program: ts.Program,
-    private readonly checker: ts.TypeChecker
+    readonly program: ts.Program,
+    readonly checker: ts.TypeChecker,
   ) {
     this.typeParser = new TypeParser(program, checker);
   }
 
   parseTypeAlias(
-    typeAliasDeclaration: ts.TypeAliasDeclaration
+    typeAliasDeclaration: ts.TypeAliasDeclaration,
   ): InterfaceMetadata {
     return {
       name: typeAliasDeclaration.name?.getText() ?? '',
@@ -24,7 +24,7 @@ export class TypeAliasParser {
       properties:
         typeAliasDeclaration.type !== undefined
           ? this.parseMembers(
-              this.checker.getTypeAtLocation(typeAliasDeclaration)
+              this.checker.getTypeAtLocation(typeAliasDeclaration),
             )
           : {},
       additionalProperties: false,
@@ -53,7 +53,7 @@ export class TypeAliasParser {
   }
 
   parseTypeAliasProperty(
-    propertySymbol: ts.Symbol
+    propertySymbol: ts.Symbol,
   ): InterfacePropertyMetadata | undefined {
     const nodeObject = this.typeParser.getObjectProperty(propertySymbol);
 

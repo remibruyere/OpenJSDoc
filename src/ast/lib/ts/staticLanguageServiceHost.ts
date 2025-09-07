@@ -1,5 +1,5 @@
-import ts from 'typescript';
 import path from 'path';
+import ts from 'typescript';
 
 export class StaticLanguageServiceHost implements ts.LanguageServiceHost {
   private readonly _cmdLine: ts.ParsedCommandLine;
@@ -15,7 +15,7 @@ export class StaticLanguageServiceHost implements ts.LanguageServiceHost {
       parsed.config,
       ts.sys,
       path.dirname(projectPath),
-      existingOptions
+      existingOptions,
     );
     if (this._cmdLine.errors.length > 0) {
       throw new Error(JSON.stringify(parsed.error));

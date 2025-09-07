@@ -1,10 +1,10 @@
 import ts from 'typescript';
 import { parseClass } from './ast/parser/class/class';
+import { parseArrowFunction } from './ast/parser/function/arrow-function';
 import { parseFunction } from './ast/parser/function/function';
 import { InterfaceParser } from './ast/parser/interface/interface';
-import { parseArrowFunction } from './ast/parser/function/arrow-function';
-import type { GlobalMetadata } from './ast/types/global-metadata';
 import { TypeAliasParser } from './ast/parser/typeAlias/typeAlias';
+import type { GlobalMetadata } from './ast/types/global-metadata';
 
 export class SourceFileVisitor {
   interfaceParse: InterfaceParser;
@@ -17,7 +17,7 @@ export class SourceFileVisitor {
 
   constructor(
     private readonly program: ts.Program,
-    private readonly checker: ts.TypeChecker
+    private readonly checker: ts.TypeChecker,
   ) {
     this.interfaceParse = new InterfaceParser(this.program, this.checker);
     this.typeAliasParser = new TypeAliasParser(this.program, this.checker);
@@ -33,11 +33,11 @@ export class SourceFileVisitor {
       }
     } else if (ts.isInterfaceDeclaration(node)) {
       this.globalMetadata.interfaceMetadata.push(
-        this.interfaceParse.parseInterface(node)
+        this.interfaceParse.parseInterface(node),
       );
     } else if (ts.isTypeAliasDeclaration(node)) {
       this.globalMetadata.interfaceMetadata.push(
-        this.typeAliasParser.parseTypeAlias(node)
+        this.typeAliasParser.parseTypeAlias(node),
       );
     } else if (ts.isArrowFunction(node)) {
       const functionMetadata = parseArrowFunction(node, this.checker);

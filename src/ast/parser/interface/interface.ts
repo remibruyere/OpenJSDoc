@@ -1,23 +1,23 @@
+import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
 import type ts from 'typescript';
 import { getTextOfJSDocComment } from 'typescript';
-import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
-import { type InterfacePropertyMetadata } from './types/interfacePropertyMetadata';
-import { type InterfaceMetadata } from './types/interfaceMetadata';
 import { TypeParser } from '../../lib/type/type-parser';
 import { type ObjectType } from '../../types/node-types';
+import { type InterfaceMetadata } from './types/interfaceMetadata';
+import { type InterfacePropertyMetadata } from './types/interfacePropertyMetadata';
 
 export class InterfaceParser {
   typeParser: TypeParser;
 
   constructor(
-    private readonly program: ts.Program,
-    private readonly checker: ts.TypeChecker
+    readonly program: ts.Program,
+    readonly checker: ts.TypeChecker,
   ) {
     this.typeParser = new TypeParser(program, checker);
   }
 
   parseInterface(
-    interfaceDeclaration: ts.InterfaceDeclaration
+    interfaceDeclaration: ts.InterfaceDeclaration,
   ): InterfaceMetadata {
     const name = interfaceDeclaration.name?.getText() ?? '';
     const description = this.getInterfaceDescription(interfaceDeclaration);
@@ -32,7 +32,7 @@ export class InterfaceParser {
   }
 
   parseInterfaceProperties(
-    interfaceDeclaration: ts.InterfaceDeclaration
+    interfaceDeclaration: ts.InterfaceDeclaration,
   ): InterfacePropertyMetadata {
     const properties: InterfacePropertyMetadata = {};
     const typeAtLocation = this.checker.getTypeAtLocation(interfaceDeclaration);
@@ -46,7 +46,7 @@ export class InterfaceParser {
   }
 
   getInterfaceDescription(
-    interfaceDeclaration: ts.InterfaceDeclaration
+    interfaceDeclaration: ts.InterfaceDeclaration,
   ): string {
     if (canHaveJsDoc(interfaceDeclaration)) {
       const jsDocs: ts.JSDoc[] = getJsDoc(interfaceDeclaration);
@@ -58,7 +58,7 @@ export class InterfaceParser {
   }
 
   parseInterfaceProperty(
-    propertySymbol: ts.Symbol
+    propertySymbol: ts.Symbol,
   ): InterfacePropertyMetadata | undefined {
     if (propertySymbol.valueDeclaration === undefined) {
       return undefined;

@@ -1,10 +1,10 @@
 import ts from 'typescript';
+import { type DecoratorMetadata } from '../types/decorator-metadata';
 import {
   parseCustomTagTypedComment,
   parseCustomTagTypedResponseCode,
   parseCustomTagTypedType,
 } from './customDecorator/typed';
-import { type DecoratorMetadata } from '../types/decorator-metadata';
 
 const customTags = ['response', 'request'];
 
@@ -59,7 +59,7 @@ export function getPropertyTagComment(tag: ts.JSDocTag): string {
  * @param tag
  */
 export function getDecoratorType(
-  tag: ts.JSDocTag | ts.JSDocTypeTag
+  tag: ts.JSDocTag | ts.JSDocTypeTag,
 ): string | string[] | undefined {
   if (customTags.includes(tag.tagName.getText())) {
     return parseCustomTagTypedType(tag);
@@ -69,10 +69,10 @@ export function getDecoratorType(
     if (ts.isParenthesizedTypeNode(typeNode)) {
       if (ts.isUnionTypeNode(typeNode.type)) {
         return typeNode.type.types.map((value) => value.getText());
-      } else {
-        return typeNode.getText();
       }
-    } else if (ts.isTypeReferenceNode(typeNode)) {
+      return typeNode.getText();
+    }
+    if (ts.isTypeReferenceNode(typeNode)) {
       return typeNode.getText();
     }
   }
@@ -85,7 +85,7 @@ export function getDecoratorType(
  * @param tag
  */
 export function getDecoratorResponseCode(
-  tag: ts.JSDocTag | ts.JSDocTypeTag
+  tag: ts.JSDocTag | ts.JSDocTypeTag,
 ): number | undefined {
   if (['response'].includes(tag.tagName.getText())) {
     return parseCustomTagTypedResponseCode(tag);

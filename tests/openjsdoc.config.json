@@ -1,0 +1,19 @@
+{
+  "projectPath": "./tsconfig.json",
+  "serverConfigurations": [
+    {
+      "serverBasePath": "src",
+      "openapiDoc": {
+        "openapi": "3.1.0",
+        "info": {
+          "title": "Test project",
+          "version": "1.0.0"
+        }
+      },
+      "output": {
+        "json": "./docs/openapi.json",
+        "yaml": "./docs/openapi.yaml"
+      }
+    }
+  ]
+}

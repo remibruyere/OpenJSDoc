@@ -1,5 +1,5 @@
-import { OpenApiDocBuilder } from './openApiDoc/builder';
 import { OpenJsDoc } from './open-js-doc';
+import { OpenApiDocBuilder } from './openApiDoc/builder';
 import { OpenApiDocWriter } from './openApiDoc/writer';
 
 export function main(configPath: string): void {
@@ -7,21 +7,22 @@ export function main(configPath: string): void {
 
   openJsDoc.computeProject();
 
-  // console.log(JSON.stringify(openJsDoc.getSourceFilesMetadata(), null, 2));
-  // console.log(JSON.stringify(openJsDoc.getRouterConfigurationList(), null, 2));
+  // console.debug(JSON.stringify(openJsDoc.getSourceFilesMetadata(), null, 2));
 
   openJsDoc.getServerConfigurations().forEach((serverConfig) => {
     const openApiDocBuilder = new OpenApiDocBuilder(serverConfig.openapiDoc);
 
+    // console.debug(JSON.stringify(serverConfig, null, 2));
+
     const serverRouterConfigurationList =
-      openJsDoc.getServerRouterConfigurationList(serverConfig.serverFile);
+      openJsDoc.getServerRouterConfigurationList(serverConfig.serverBasePath);
 
     if (serverRouterConfigurationList === undefined) {
       console.error(
-        `❌ No router visitor configured for server ${serverConfig.serverFile}`
+        `❌ No router visitor configured for server ${serverConfig.serverBasePath}`,
       );
       throw new Error(
-        `❌ No router visitor configured for server ${serverConfig.serverFile}`
+        `❌ No router visitor configured for server ${serverConfig.serverBasePath}`,
       );
     }
 
@@ -34,14 +35,16 @@ export function main(configPath: string): void {
             method: routerConfiguration.method,
             tagName: routerConfiguration.tagName,
           },
-          openJsDoc.getSourceFilesMetadata()
+          openJsDoc.getSourceFilesMetadata(),
         );
-      }
+      },
     );
+
+    // console.debug(JSON.stringify(typeUsedInPath, null, 2));
 
     openApiDocBuilder.addComponentConfiguration(
       openJsDoc.getSourceFilesMetadata(),
-      typeUsedInPath.flatMap((value) => value.typeNameUsed)
+      typeUsedInPath.flatMap((value) => value.typeNameUsed),
     );
 
     const openApiDocWriter = new OpenApiDocWriter(openApiDocBuilder);
@@ -49,18 +52,18 @@ export function main(configPath: string): void {
     const output = serverConfig.output;
     if (output.json === undefined && output.yaml === undefined) {
       console.warn(
-        `⚠️ No output configuration for ${serverConfig.openapiDoc.info.title} found`
+        `⚠️ No output configuration for ${serverConfig.openapiDoc.info.title} found`,
       );
     }
     if (output.json !== undefined) {
       console.info(
-        `✅ Writing json output for ${serverConfig.openapiDoc.info.title}`
+        `✅ Writing json output for ${serverConfig.openapiDoc.info.title}`,
       );
       openApiDocWriter.writeJson(output.json);
     }
     if (output.yaml !== undefined) {
       console.info(
-        `✅ Writing yaml output for ${serverConfig.openapiDoc.info.title}`
+        `✅ Writing yaml output for ${serverConfig.openapiDoc.info.title}`,
       );
       openApiDocWriter.writeYaml(output.yaml);
     }

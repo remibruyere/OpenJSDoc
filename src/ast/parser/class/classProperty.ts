@@ -1,12 +1,12 @@
-import type ts from 'typescript';
 import { canHaveJsDoc, getJsDoc } from 'tsutils/util/util';
-import { getPropertyGlobalComment, getTagInformation } from '../../lib/tag';
-import { type ClassPropertyMetadata } from './types/classPropertyMetadata';
-import { type DecoratorMetadata } from '../../types/decorator-metadata';
+import type ts from 'typescript';
 import { convertKindToType } from '../../lib/kind';
+import { getPropertyGlobalComment, getTagInformation } from '../../lib/tag';
+import { type DecoratorMetadata } from '../../types/decorator-metadata';
+import { type ClassPropertyMetadata } from './types/classPropertyMetadata';
 
 export function parseClassProperty(
-  propertyDeclaration: ts.PropertyDeclaration
+  propertyDeclaration: ts.PropertyDeclaration,
 ): ClassPropertyMetadata {
   let comment: string = '';
   const decorators: Record<string, DecoratorMetadata> = {};

@@ -1,5 +1,5 @@
-import { beforeEach, describe, it } from 'vitest';
 import ts from 'typescript';
+import { describe, it } from 'vitest';
 import { StaticLanguageServiceHost } from '../../../lib/ts/staticLanguageServiceHost';
 import { type NodeDocument } from '../../../types/node-types';
 import { TypeAliasParser } from '../typeAlias';
@@ -11,11 +11,11 @@ describe('[src/ast/parser]', () => {
       visitFn: (
         node: ts.Node,
         program: ts.Program,
-        checker: ts.TypeChecker
-      ) => NodeDocument
+        checker: ts.TypeChecker,
+      ) => NodeDocument,
     ): void => {
       const service = ts.createLanguageService(
-        new StaticLanguageServiceHost(projectPath)
+        new StaticLanguageServiceHost(projectPath),
       );
       const program = service.getProgram();
       if (program === undefined) {
@@ -42,27 +42,22 @@ describe('[src/ast/parser]', () => {
     };
 
     describe('number', () => {
-      beforeEach(() => {});
-
       it('should parse interface with one member as number', () => {
-        visitFile(
-          '/Users/remibruyere/Documents/open-source/OpenJSDoc/fixtures/type/tsconfig.json',
-          (node, program, checker) => {
-            if (ts.isTypeAliasDeclaration(node)) {
-              console.log(
-                JSON.stringify(
-                  new TypeAliasParser(program, checker).parseTypeAlias(node),
-                  null,
-                  2
-                )
-              );
-            }
-            return {
-              types: [],
-              version: 1,
-            };
+        visitFile('./fixtures/type/tsconfig.json', (node, program, checker) => {
+          if (ts.isTypeAliasDeclaration(node)) {
+            console.log(
+              JSON.stringify(
+                new TypeAliasParser(program, checker).parseTypeAlias(node),
+                null,
+                2,
+              ),
+            );
           }
-        );
+          return {
+            types: [],
+            version: 1,
+          };
+        });
       });
     });
   });

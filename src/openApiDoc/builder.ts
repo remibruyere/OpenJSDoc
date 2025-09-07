@@ -1,4 +1,4 @@
-import { OpenApiBuilder, type OpenAPIObject } from 'openapi3-ts/oas31';
+import { type OpenAPIObject, OpenApiBuilder } from 'openapi3-ts/oas31';
 import { type GlobalMetadata } from '../ast/types/global-metadata';
 import { type PathConfiguration } from '../ast/types/path-configuration';
 import { OpenApiDocComponentBuilder } from './component-builder';
@@ -33,15 +33,15 @@ export class OpenApiDocBuilder {
           tags: [],
           servers: [],
         },
-        doc
-      )
+        doc,
+      ),
     );
     this.openApiComponentBuilder = new OpenApiDocComponentBuilder(
-      this.openApiBuilder
+      this.openApiBuilder,
     );
     this.openApiDocPathBuilder = new OpenApiDocPathBuilder(
       this.openApiBuilder,
-      this.openApiComponentBuilder
+      this.openApiComponentBuilder,
     );
   }
 
@@ -55,7 +55,7 @@ export class OpenApiDocBuilder {
 
   addComponentConfiguration(
     globalMetadata: GlobalMetadata,
-    typeUsedInPath: string[]
+    typeUsedInPath: string[],
   ): this {
     // globalMetadata.classMetadata
     //   .filter((classMetadata) => typeUsedInPath.includes(classMetadata.name))
@@ -65,7 +65,7 @@ export class OpenApiDocBuilder {
 
     globalMetadata.interfaceMetadata
       .filter((interfaceMetadata) =>
-        typeUsedInPath.includes(interfaceMetadata.name)
+        typeUsedInPath.includes(interfaceMetadata.name),
       )
       .forEach((metadata) => {
         this.openApiComponentBuilder.addComponent(metadata);
@@ -77,7 +77,7 @@ export class OpenApiDocBuilder {
   addEndpointConfiguration(
     entryPointFunction: string,
     pathConfiguration: PathConfiguration,
-    globalMetadata: GlobalMetadata
+    globalMetadata: GlobalMetadata,
   ): {
     typeNameUsed: string[];
   } {

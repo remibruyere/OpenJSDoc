@@ -1,3 +1,4 @@
+import { type ReferenceObject, type SchemaObject } from 'openapi3-ts/oas31';
 import {
   type AndType,
   type AnyType,
@@ -14,11 +15,10 @@ import {
   type StringType,
   type TupleType,
 } from '../ast/types/node-types';
-import { type ReferenceObject, type SchemaObject } from 'openapi3-ts/oas31';
 
 export class OpenApiDocComponentNodeTypeBuilder {
   static convertNodeTypeToSchemaObject(
-    nodeType: NodeType
+    nodeType: NodeType,
   ): SchemaObject | ReferenceObject {
     switch (nodeType.type) {
       case 'null':
@@ -49,7 +49,7 @@ export class OpenApiDocComponentNodeTypeBuilder {
   }
 
   static getAnnotationSchemaObject(
-    coreTypeAnnotations: CoreTypeAnnotations
+    coreTypeAnnotations: CoreTypeAnnotations,
   ): Partial<SchemaObject> {
     return {
       title: coreTypeAnnotations.name,
@@ -57,7 +57,7 @@ export class OpenApiDocComponentNodeTypeBuilder {
         coreTypeAnnotations.description !== undefined ||
         coreTypeAnnotations.comment !== undefined
           ? [coreTypeAnnotations.description, coreTypeAnnotations.comment].join(
-              '\n\n'
+              '\n\n',
             )
           : undefined,
       ...(Array.isArray(coreTypeAnnotations.examples)
@@ -97,7 +97,7 @@ export class OpenApiDocComponentNodeTypeBuilder {
   }
 
   static getSchemaObjectFromIntegerType(
-    integerType: IntegerType
+    integerType: IntegerType,
   ): SchemaObject {
     return {
       ...this.getAnnotationSchemaObject(integerType),
@@ -108,7 +108,7 @@ export class OpenApiDocComponentNodeTypeBuilder {
   }
 
   static getSchemaObjectFromBooleanType(
-    booleanType: BooleanType
+    booleanType: BooleanType,
   ): SchemaObject {
     return {
       ...this.getAnnotationSchemaObject(booleanType),
@@ -136,14 +136,14 @@ export class OpenApiDocComponentNodeTypeBuilder {
     const allKeys = Object.keys(objectType.properties);
 
     const required = allKeys.filter(
-      (prop) => objectType.properties[prop].required
+      (prop) => objectType.properties[prop].required,
     );
 
     const properties = Object.fromEntries(
       allKeys.map((prop) => [
         prop,
         this.convertNodeTypeToSchemaObject(objectType.properties[prop].node),
-      ])
+      ]),
     );
 
     return {
@@ -157,7 +157,7 @@ export class OpenApiDocComponentNodeTypeBuilder {
           ? { additionalProperties: false }
           : {
               additionalProperties: this.convertNodeTypeToSchemaObject(
-                objectType.additionalProperties
+                objectType.additionalProperties,
               ),
             }),
     };
@@ -168,7 +168,7 @@ export class OpenApiDocComponentNodeTypeBuilder {
       ...this.getAnnotationSchemaObject(tupleType),
       type: 'array',
       prefixItems: tupleType.elementTypes.map((item) =>
-        this.convertNodeTypeToSchemaObject(item)
+        this.convertNodeTypeToSchemaObject(item),
       ),
       ...(tupleType.additionalItems === true
         ? {}
@@ -176,7 +176,7 @@ export class OpenApiDocComponentNodeTypeBuilder {
           ? { additionalItems: false }
           : {
               additionalItems: this.convertNodeTypeToSchemaObject(
-                tupleType.additionalItems
+                tupleType.additionalItems,
               ),
             }),
       minItems: tupleType.minItems,
@@ -187,7 +187,7 @@ export class OpenApiDocComponentNodeTypeBuilder {
     return {
       ...this.getAnnotationSchemaObject(andType),
       allOf: andType.and.map((subNode) =>
-        this.convertNodeTypeToSchemaObject(subNode)
+        this.convertNodeTypeToSchemaObject(subNode),
       ),
     };
   }
@@ -196,7 +196,7 @@ export class OpenApiDocComponentNodeTypeBuilder {
     return {
       ...this.getAnnotationSchemaObject(orType),
       anyOf: orType.or.map((subNode) =>
-        this.convertNodeTypeToSchemaObject(subNode)
+        this.convertNodeTypeToSchemaObject(subNode),
       ),
     };
   }
